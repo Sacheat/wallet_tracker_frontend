@@ -12,12 +12,19 @@ const eurFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 })
 
+// Intl's fr-FR grouping separator is a narrow no-break space (U+202F),
+// which many fonts render as invisible. Swap it for a regular no-break
+// space (U+00A0) so "100 000,75" actually shows a visible gap.
+function withVisibleNbsp(formatted: string) {
+  return formatted.replace(/ /g, " ")
+}
+
 export function formatUsd(value: number) {
-  return usdFormatter.format(value)
+  return withVisibleNbsp(usdFormatter.format(value))
 }
 
 export function formatEur(value: number) {
-  return eurFormatter.format(value)
+  return withVisibleNbsp(eurFormatter.format(value))
 }
 
 export function formatPercent(value: number | null) {
@@ -28,7 +35,7 @@ export function formatPercent(value: number | null) {
 
 export function formatQuantity(value: string | number) {
   const num = typeof value === "string" ? Number(value) : value
-  return num.toLocaleString("fr-FR", { maximumFractionDigits: 8 })
+  return withVisibleNbsp(num.toLocaleString("fr-FR", { maximumFractionDigits: 8 }))
 }
 
 export const ASSET_TYPE_LABELS: Record<AssetType, string> = {
