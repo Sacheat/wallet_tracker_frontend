@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Plus } from "lucide-react"
+import { Plus, TriangleAlert } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom"
@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/select"
 import { useAssets } from "@/features/assets/hooks"
 import { usePlatforms } from "@/features/platforms/hooks"
-import { useCreatePortfolioEntry } from "@/features/portfolio/hooks"
+import { useCreatePortfolioEntry, usePortfolioEntries } from "@/features/portfolio/hooks"
 import {
   addPositionSchema,
   type AddPositionFormInput,
@@ -45,12 +45,19 @@ export function AddPositionDialog() {
   const [open, setOpen] = useState(false)
   const { data: assets = [] } = useAssets()
   const { data: platforms = [] } = usePlatforms()
+  const { data: entries = [] } = usePortfolioEntries()
   const createEntry = useCreatePortfolioEntry()
 
   const form = useForm<AddPositionFormInput, unknown, AddPositionFormValues>({
     resolver: zodResolver(addPositionSchema),
     defaultValues: { asset_id: undefined, platform_id: undefined, quantity: undefined },
   })
+
+  const watchedAssetId = form.watch("asset_id")
+  const watchedPlatformId = form.watch("platform_id")
+  const existingEntry = entries.find(
+    (e) => e.asset_id === watchedAssetId && e.platform_id === watchedPlatformId,
+  )
 
   async function onSubmit(values: AddPositionFormValues) {
     try {
@@ -179,13 +186,24 @@ export function AddPositionDialog() {
                   </FormItem>
                 )}
               />
+              {existingEntry && (
+                <div className="border-warning/40 bg-warning/10 flex items-start gap-2 rounded-md border px-3 py-2 text-sm">
+                  <TriangleAlert className="text-warning mt-0.5 size-4 shrink-0" />
+                  <span>
+                    Tu as déjà une position sur cet actif et cette plateforme
+                    (quantité actuelle : {existingEntry.quantity}). Modifie sa
+                    quantité depuis le tableau plutôt que d'en créer une
+                    nouvelle — le backend refuse les doublons.
+                  </span>
+                </div>
+              )}
               {form.formState.errors.root && (
                 <p className="text-destructive text-sm">
                   {form.formState.errors.root.message}
                 </p>
               )}
               <DialogFooter>
-                <Button type="submit" disabled={createEntry.isPending}>
+                <Button type="submit" disabled={createEntry.isPending || Boolean(existingEntry)}>
                   {createEntry.isPending ? "Ajout..." : "Ajouter"}
                 </Button>
               </DialogFooter>

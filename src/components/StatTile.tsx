@@ -5,12 +5,14 @@ import { cn } from "@/lib/utils"
 export function StatTile({
   label,
   value,
+  delta,
   secondaryValue,
   icon,
   className,
 }: {
   label: string
   value: ReactNode
+  delta?: ReactNode
   secondaryValue?: ReactNode
   icon?: ReactNode
   className?: string
@@ -20,7 +22,10 @@ export function StatTile({
       <CardContent className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs font-medium">{label}</span>
-          <span className="text-2xl font-semibold tracking-tight">{value}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-semibold tracking-tight">{value}</span>
+            {delta}
+          </div>
           {secondaryValue && (
             <span className="text-muted-foreground text-sm">{secondaryValue}</span>
           )}

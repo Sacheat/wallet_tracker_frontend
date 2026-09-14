@@ -1,6 +1,17 @@
-import { MoreHorizontal, TriangleAlert, Wallet } from "lucide-react"
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Bell,
+  Download,
+  Layers,
+  MoreHorizontal,
+  Search,
+  TriangleAlert,
+  Wallet,
+} from "lucide-react"
+import { Fragment, useMemo, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -20,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Table,
@@ -29,24 +41,129 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { GainLossValue } from "@/components/GainLossValue"
+import { MiniSparkline } from "@/components/MiniSparkline"
 import { StatTile } from "@/components/StatTile"
 import { AddPositionDialog } from "@/features/portfolio/AddPositionDialog"
 import { EditQuantityDialog } from "@/features/portfolio/EditQuantityDialog"
 import {
   useDeletePortfolioEntry,
-  useMergedPortfolio,
-  type PortfolioRow,
+  usePortfolioTable,
+  type PortfolioTableRow,
 } from "@/features/portfolio/hooks"
 import { ASSET_TYPE_LABELS, formatEur, formatQuantity, formatUsd } from "@/lib/format"
+import { downloadCsv } from "@/lib/csv"
 import { toApiError } from "@/lib/http-client"
+import { cn } from "@/lib/utils"
+
+type SortKey = "value" | "name" | "type" | "platform" | "quantity" | "change24h"
+
+const SORT_ACCESSORS: Record<SortKey, (row: PortfolioTableRow) => number | string> = {
+  value: (r) => r.valueUsd ?? -Infinity,
+  name: (r) => r.assetName.toLowerCase(),
+  type: (r) => r.assetType,
+  platform: (r) => r.platformName.toLowerCase(),
+  quantity: (r) => Number(r.quantity),
+  change24h: (r) => r.change24h ?? -Infinity,
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  activeKey,
+  direction,
+  onSort,
+  className,
+}: {
+  label: string
+  sortKey: SortKey
+  activeKey: SortKey
+  direction: "asc" | "desc"
+  onSort: (key: SortKey) => void
+  className?: string
+}) {
+  const isActive = activeKey === sortKey
+  const Icon = isActive ? (direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className={cn(
+          "hover:text-foreground inline-flex items-center gap-1 transition-colors",
+          isActive && "text-foreground",
+        )}
+      >
+        {label}
+        <Icon className="size-3.5" />
+      </button>
+    </TableHead>
+  )
+}
 
 export function PortfolioPage() {
-  const { rows, totalValueUsd, totalValueEur, isLoading, isError, isValuationUnavailable } =
-    useMergedPortfolio()
-  const [editingRow, setEditingRow] = useState<PortfolioRow | null>(null)
-  const [deletingRow, setDeletingRow] = useState<PortfolioRow | null>(null)
+  const {
+    rows,
+    totalValueUsd,
+    totalValueEur,
+    delta,
+    isLoading,
+    isError,
+    isValuationUnavailable,
+  } = usePortfolioTable()
+  const [editingRow, setEditingRow] = useState<PortfolioTableRow | null>(null)
+  const [deletingRow, setDeletingRow] = useState<PortfolioTableRow | null>(null)
+  const [search, setSearch] = useState("")
+  const [sortKey, setSortKey] = useState<SortKey>("value")
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
+  const [groupByPlatform, setGroupByPlatform] = useState(false)
   const deleteEntry = useDeletePortfolioEntry()
   const navigate = useNavigate()
+
+  function handleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+    } else {
+      setSortKey(key)
+      setSortDir("desc")
+    }
+  }
+
+  const filteredRows = useMemo(() => {
+    const query = search.trim().toLowerCase()
+    const filtered = query
+      ? rows.filter(
+          (r) =>
+            r.assetName.toLowerCase().includes(query) ||
+            r.assetSymbol.toLowerCase().includes(query) ||
+            r.platformName.toLowerCase().includes(query),
+        )
+      : rows
+
+    const accessor = SORT_ACCESSORS[sortKey]
+    const sorted = [...filtered].sort((a, b) => {
+      const av = accessor(a)
+      const bv = accessor(b)
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0
+      return sortDir === "asc" ? cmp : -cmp
+    })
+    return sorted
+  }, [rows, search, sortKey, sortDir])
+
+  const groups = useMemo(() => {
+    if (!groupByPlatform) return null
+    const byPlatform = new Map<string, PortfolioTableRow[]>()
+    for (const row of filteredRows) {
+      const list = byPlatform.get(row.platformName) ?? []
+      list.push(row)
+      byPlatform.set(row.platformName, list)
+    }
+    return [...byPlatform.entries()].sort(
+      (a, b) =>
+        b[1].reduce((s, r) => s + (r.valueUsd ?? 0), 0) -
+        a[1].reduce((s, r) => s + (r.valueUsd ?? 0), 0),
+    )
+  }, [groupByPlatform, filteredRows])
 
   async function confirmDelete() {
     if (!deletingRow) return
@@ -60,6 +177,103 @@ export function PortfolioPage() {
     }
   }
 
+  function handleExport() {
+    downloadCsv(
+      "portefeuille.csv",
+      filteredRows.map((r) => ({
+        actif: r.assetName,
+        symbole: r.assetSymbol,
+        type: ASSET_TYPE_LABELS[r.assetType],
+        plateforme: r.platformName,
+        quantite: r.quantity,
+        variation_24h: r.change24h ?? "",
+        valeur_usd: r.valueUsd ?? "",
+        valeur_eur: r.valueEur ?? "",
+      })),
+    )
+  }
+
+  function renderRow(row: PortfolioTableRow) {
+    return (
+      <TableRow
+        key={row.entryId}
+        className="cursor-pointer"
+        onClick={() => navigate(`/assets/${row.assetId}`)}
+      >
+        <TableCell className="font-medium">
+          <div className="flex items-center gap-2">
+            {row.assetLogoUrl ? (
+              <img src={row.assetLogoUrl} alt="" className="size-5 rounded-full" />
+            ) : (
+              <div className="bg-muted size-5 rounded-full" />
+            )}
+            <span>{row.assetName}</span>
+            <span className="text-muted-foreground">{row.assetSymbol}</span>
+            {row.hasActiveAlert && (
+              <Bell
+                className="text-primary size-3.5 shrink-0"
+                aria-label="Alerte active"
+              />
+            )}
+          </div>
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary">{ASSET_TYPE_LABELS[row.assetType]}</Badge>
+        </TableCell>
+        {!groupByPlatform && (
+          <TableCell className="text-muted-foreground">{row.platformName}</TableCell>
+        )}
+        <TableCell className="text-right tabular-nums">
+          {formatQuantity(row.quantity)}
+        </TableCell>
+        <TableCell className="text-right">
+          <GainLossValue value={row.change24h} className="justify-end" />
+        </TableCell>
+        <TableCell>
+          <MiniSparkline points={row.history7d} />
+        </TableCell>
+        <TableCell className="text-right tabular-nums">
+          {row.isGoldUnavailable ? (
+            <span
+              className="text-muted-foreground inline-flex items-center gap-1 text-xs"
+              title="Le cours de l'or provient d'une source non officielle, momentanément indisponible."
+            >
+              <TriangleAlert className="size-3.5" /> Indisponible
+            </span>
+          ) : row.valueUsd !== null ? (
+            <div className="flex flex-col">
+              <span className="font-medium">{formatUsd(row.valueUsd)}</span>
+              <span className="text-muted-foreground text-xs">
+                {formatEur(row.valueEur ?? 0)}
+              </span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )}
+        </TableCell>
+        <TableCell onClick={(e) => e.stopPropagation()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="icon-sm" aria-label="Actions">
+                  <MoreHorizontal />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEditingRow(row)}>
+                Modifier la quantité
+              </DropdownMenuItem>
+              <DropdownMenuItem variant="destructive" onClick={() => setDeletingRow(row)}>
+                Supprimer
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TableCell>
+      </TableRow>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -71,7 +285,20 @@ export function PortfolioPage() {
         <StatTile
           label="Valeur totale"
           value={totalValueUsd !== null ? formatUsd(totalValueUsd) : "—"}
-          secondaryValue={totalValueEur !== null ? `${formatEur(totalValueEur)}` : undefined}
+          delta={delta && <GainLossValue value={delta.deltaPercent} />}
+          secondaryValue={
+            <div className="flex flex-col gap-0.5">
+              {totalValueEur !== null && <span>{formatEur(totalValueEur)}</span>}
+              {delta && delta.coveredCount < delta.totalCount && (
+                <span className="text-xs">
+                  Variation calculée sur {delta.coveredCount}/{delta.totalCount} positions
+                </span>
+              )}
+              <Link to="/market" className="text-primary w-fit text-xs underline-offset-4 hover:underline">
+                Voir la répartition par type →
+              </Link>
+            </div>
+          }
           icon={<Wallet className="size-4.5" />}
         />
       </div>
@@ -104,86 +331,100 @@ export function PortfolioPage() {
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Actif</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Plateforme</TableHead>
-                <TableHead className="text-right">Quantité</TableHead>
-                <TableHead className="text-right">Valeur</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row) => (
-                <TableRow
-                  key={row.entryId}
-                  className="cursor-pointer"
-                  onClick={() => navigate(`/assets/${row.assetId}`)}
-                >
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      {row.assetLogoUrl ? (
-                        <img
-                          src={row.assetLogoUrl}
-                          alt=""
-                          className="size-5 rounded-full"
-                        />
-                      ) : (
-                        <div className="bg-muted size-5 rounded-full" />
-                      )}
-                      <span>{row.assetName}</span>
-                      <span className="text-muted-foreground">{row.assetSymbol}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{ASSET_TYPE_LABELS[row.assetType]}</Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{row.platformName}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatQuantity(row.quantity)}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {row.valueUsd !== null ? (
-                      <div className="flex flex-col">
-                        <span className="font-medium">{formatUsd(row.valueUsd)}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {formatEur(row.valueEur ?? 0)}
-                        </span>
-                      </div>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button variant="ghost" size="icon-sm" aria-label="Actions">
-                            <MoreHorizontal />
-                          </Button>
-                        }
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 sm:max-w-xs">
+              <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+              <Input
+                placeholder="Filtrer par actif ou plateforme..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Button
+              variant={groupByPlatform ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setGroupByPlatform((g) => !g)}
+            >
+              <Layers /> Par plateforme
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExport}>
+              <Download /> Export CSV
+            </Button>
+          </div>
+
+          {filteredRows.length === 0 ? (
+            <p className="text-muted-foreground py-8 text-center text-sm">
+              Aucune position ne correspond à "{search}".
+            </p>
+          ) : (
+            <div className="overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <SortHeader label="Actif" sortKey="name" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+                    <SortHeader label="Type" sortKey="type" activeKey={sortKey} direction={sortDir} onSort={handleSort} />
+                    {!groupByPlatform && (
+                      <SortHeader
+                        label="Plateforme"
+                        sortKey="platform"
+                        activeKey={sortKey}
+                        direction={sortDir}
+                        onSort={handleSort}
                       />
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingRow(row)}>
-                          Modifier la quantité
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => setDeletingRow(row)}
-                        >
-                          Supprimer
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    )}
+                    <SortHeader
+                      label="Quantité"
+                      sortKey="quantity"
+                      activeKey={sortKey}
+                      direction={sortDir}
+                      onSort={handleSort}
+                      className="text-right"
+                    />
+                    <SortHeader
+                      label="24h"
+                      sortKey="change24h"
+                      activeKey={sortKey}
+                      direction={sortDir}
+                      onSort={handleSort}
+                      className="text-right"
+                    />
+                    <TableHead>7 jours</TableHead>
+                    <SortHeader
+                      label="Valeur"
+                      sortKey="value"
+                      activeKey={sortKey}
+                      direction={sortDir}
+                      onSort={handleSort}
+                      className="text-right"
+                    />
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groups
+                    ? groups.map(([platformName, platformRows]) => (
+                        <Fragment key={`group-${platformName}`}>
+                          <TableRow className="bg-muted/40 hover:bg-muted/40">
+                            <TableCell colSpan={7} className="text-muted-foreground py-1.5 text-xs font-medium">
+                              {platformName}
+                              <span className="ml-2">
+                                {formatUsd(
+                                  platformRows.reduce((s, r) => s + (r.valueUsd ?? 0), 0),
+                                )}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                          {platformRows.map(renderRow)}
+                        </Fragment>
+                      ))
+                    : filteredRows.map(renderRow)}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </>
       )}
 
       <EditQuantityDialog

@@ -1,7 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo } from "react"
+import { useAlerts } from "@/features/alerts/hooks"
+import { getAssetDetails } from "@/features/assets/api"
+import { assetsKeys } from "@/features/assets/hooks"
 import * as portfolioApi from "@/features/portfolio/api"
-import type { AssetType } from "@/types/api"
+import type { AssetType, PricePoint } from "@/types/api"
 
 export const portfolioKeys = {
   valued: ["portfolio"] as const,
@@ -88,6 +91,92 @@ export function useMergedPortfolio() {
       entriesQuery.refetch()
       valuedQuery.refetch()
     },
+  }
+}
+
+export interface PortfolioTableRow extends PortfolioRow {
+  change24h: number | null
+  history7d: PricePoint[]
+  hasActiveAlert: boolean
+  isGoldUnavailable: boolean
+}
+
+export interface PortfolioDelta {
+  deltaUsd: number
+  deltaPercent: number
+  coveredCount: number
+  totalCount: number
+}
+
+/**
+ * Layers per-asset detail (change_percent, history_7d - same data the Market
+ * page's "movers" widget uses) and active-alert presence onto the merged
+ * portfolio rows. Costs one /assets/{id}/details request per distinct held
+ * asset; TanStack Query dedupes/caches by asset id so visiting Market first
+ * (or navigating between the two) doesn't re-fetch.
+ */
+export function usePortfolioTable() {
+  const merged = useMergedPortfolio()
+  const { data: alerts = [] } = useAlerts()
+
+  const uniqueAssetIds = useMemo(
+    () => [...new Set(merged.rows.map((r) => r.assetId))],
+    [merged.rows],
+  )
+
+  const detailQueries = useQueries({
+    queries: uniqueAssetIds.map((id) => ({
+      queryKey: assetsKeys.details(id),
+      queryFn: () => getAssetDetails(id),
+      staleTime: 5 * 60_000,
+    })),
+  })
+
+  const detailsByAssetId = new Map(
+    uniqueAssetIds.map((id, index) => [id, detailQueries[index]?.data]),
+  )
+  const activeAlertAssetIds = new Set(
+    alerts.filter((a) => a.is_active && a.asset_id !== null).map((a) => a.asset_id),
+  )
+
+  const rows: PortfolioTableRow[] = merged.rows.map((row) => {
+    const details = detailsByAssetId.get(row.assetId)
+    return {
+      ...row,
+      change24h: details?.change_percent["24h"] ?? null,
+      history7d: details?.history_7d ?? [],
+      hasActiveAlert: activeAlertAssetIds.has(row.assetId),
+      isGoldUnavailable: row.assetType === "gold" && row.valueUsd === null,
+    }
+  })
+
+  const delta = useMemo<PortfolioDelta | null>(() => {
+    const covered = rows.filter(
+      (r) => r.valueUsd !== null && r.change24h !== null && r.change24h !== -100,
+    )
+    if (covered.length === 0) return null
+
+    let totalNow = 0
+    let totalYesterday = 0
+    for (const r of covered) {
+      totalNow += r.valueUsd!
+      totalYesterday += r.valueUsd! / (1 + r.change24h! / 100)
+    }
+    if (totalYesterday === 0) return null
+
+    return {
+      deltaUsd: totalNow - totalYesterday,
+      deltaPercent: ((totalNow - totalYesterday) / totalYesterday) * 100,
+      coveredCount: covered.length,
+      totalCount: rows.length,
+    }
+  }, [rows])
+
+  return {
+    ...merged,
+    rows,
+    delta,
+    isLoading: merged.isLoading || detailQueries.some((q) => q.isLoading),
   }
 }
 
