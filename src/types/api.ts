@@ -1,0 +1,132 @@
+export type AssetType = "crypto" | "stock" | "gold" | "etf"
+
+export interface User {
+  id: number
+  name: string
+  email: string
+  created_at: string
+}
+
+export interface Asset {
+  id: number
+  name: string
+  symbol: string
+  type: AssetType
+  external_id: string | null
+  logo_url: string | null
+}
+
+export interface ChangePercent {
+  "1h": number | null
+  "24h": number | null
+  "7d": number | null
+}
+
+export interface PricePoint {
+  price_usd: string
+  recorded_at: string
+}
+
+export interface AssetDetails {
+  price_usd: number
+  description: string | null
+  market_cap_usd: number | null
+  change_percent: ChangePercent
+  history_7d: PricePoint[]
+}
+
+export interface NewsItem {
+  title: string
+  url: string
+  source: string
+  published_at: string
+  // Only present on the aggregated /api/portfolio/news endpoint, not on
+  // /api/assets/{id}/news (which is already scoped to a single asset).
+  asset_symbol?: string
+}
+
+export interface Platform {
+  id: number
+  name: string
+  logo_url: string | null
+}
+
+export interface PortfolioValuedEntry {
+  asset: string
+  asset_type: AssetType
+  platform: string
+  quantity: string
+  value_usd: number
+  value_eur: number
+}
+
+export interface PortfolioResponse {
+  data: PortfolioValuedEntry[]
+  total_value_usd: number
+  total_value_eur: number
+}
+
+export interface PortfolioEntry {
+  id: number
+  user_id: number
+  asset_id: number
+  platform_id: number
+  quantity: string
+  asset: Asset
+  platform: Platform
+}
+
+export type PriceAlertType =
+  | "price_above"
+  | "price_below"
+  | "percent_change"
+  | "portfolio_total_above"
+  | "portfolio_total_below"
+
+export type AlertWindow = "1h" | "24h" | "7d"
+
+export interface PriceAlert {
+  id: number
+  type: PriceAlertType
+  asset_id: number | null
+  asset?: Asset
+  threshold: number | null
+  percent_threshold: number | null
+  window: AlertWindow | null
+  user_id: number
+  is_active: boolean
+}
+
+export interface NotificationSettings {
+  email_notifications_enabled: boolean
+  discord_webhook_url: string | null
+  daily_digest_enabled: boolean
+  weekly_digest_enabled: boolean
+}
+
+export interface AuditLogEntry {
+  id: number
+  auditable_type: string
+  auditable_id: number
+  action: "created" | "updated" | "deleted"
+  changes: Record<string, unknown>
+  created_at: string
+}
+
+export interface Paginated<T> {
+  current_page: number
+  data: T[]
+  next_page_url: string | null
+  total: number
+}
+
+export interface FearGreedIndex {
+  value: number
+  classification: string
+  updated_at: string
+}
+
+export interface ApiValidationError {
+  message: string
+  errors?: Record<string, string[]>
+}

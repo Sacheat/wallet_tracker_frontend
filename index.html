@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crypto Portfolio Tracker</title>
+    <script>
+      // Applied before first paint to avoid a light/dark flash - mirrors the
+      // logic in ThemeProvider, which takes over once React mounts.
+      (function () {
+        var stored = localStorage.getItem("wallet-tracker-theme");
+        var theme =
+          stored === "light" || stored === "dark" ? stored : null;
+        var isDark =
+          theme === "dark" ||
+          (!theme &&
+            window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (isDark) document.documentElement.classList.add("dark");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
