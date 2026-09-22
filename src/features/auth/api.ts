@@ -39,3 +39,10 @@ export async function getCurrentUser(): Promise<User | null> {
     throw error
   }
 }
+
+// Re-sends the verification link. Fire-and-forget on the backend (queued
+// email, 3 retries) - a 200 confirms it was queued, not that it was
+// delivered. Shares the 6 req/min throttle with PATCH /user.
+export async function resendVerificationEmail() {
+  await httpClient.post("/email/verification-notification")
+}

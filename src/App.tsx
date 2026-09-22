@@ -1,5 +1,6 @@
-import { QueryClientProvider } from "@tanstack/react-query"
-import { Navigate, Route, Routes, useLocation } from "react-router-dom"
+import { QueryClientProvider, useQueryClient } from "@tanstack/react-query"
+import { useEffect } from "react"
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Toaster } from "@/components/ui/sonner"
 import { AlertsPage } from "@/features/alerts/AlertsPage"
@@ -11,13 +12,43 @@ import { CatalogPage } from "@/features/catalog/CatalogPage"
 import { MarketPage } from "@/features/market/MarketPage"
 import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
 import { queryClient } from "@/lib/query-client"
-import { AuthProvider } from "@/providers/AuthProvider"
+import { authQueryKey, AuthProvider } from "@/providers/AuthProvider"
 import { ThemeProvider } from "@/providers/ThemeProvider"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
 
+/**
+ * GET /email/verify/{id}/{hash} (the link clicked from the verification
+ * email) redirects the browser to {FRONTEND_URL}/?verified=1. Refetch the
+ * cached user so email_verified_at flips and ProtectedRoute drops the
+ * VerifyEmailScreen block, then strip the param so it doesn't linger in
+ * the URL or re-trigger on a later reload.
+ */
+function useHandleEmailVerifiedRedirect() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    if (!params.has("verified")) return
+
+    queryClient.invalidateQueries({ queryKey: authQueryKey })
+    params.delete("verified")
+    navigate(
+      { pathname: location.pathname, search: params.toString() },
+      { replace: true },
+    )
+    // Deliberately keyed on location.search alone: re-navigating with the
+    // param stripped must not immediately re-trigger this effect the way
+    // including `navigate`/`location.pathname` in the deps would risk.
+    // oxlint-disable-next-line exhaustive-deps
+  }, [location.search])
+}
+
 function AppRoutes() {
   const location = useLocation()
+  useHandleEmailVerifiedRedirect()
   return (
     <ErrorBoundary key={location.pathname}>
       <Routes>
