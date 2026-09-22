@@ -46,7 +46,10 @@ export function PlatformsTab() {
       await deletePlatform.mutateAsync(deletingPlatform.id)
       toast.success("Plateforme supprimée")
     } catch (error) {
-      toast.error(toApiError(error).message)
+      const apiError = toApiError(error)
+      toast.error(
+        apiError.status === 409 ? apiError.message : "La suppression a échoué.",
+      )
     } finally {
       setDeletingPlatform(null)
     }
@@ -143,10 +146,9 @@ export function PlatformsTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer {deletingPlatform?.name} ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Contrairement aux actifs, aucune vérification serveur n'empêche de
-              supprimer une plateforme encore utilisée dans un portefeuille — si
-              c'est le cas, les positions concernées afficheront des données
-              incohérentes. Vérifie avant de confirmer.
+              Cette action est irréversible. Si la plateforme est encore utilisée
+              dans un portefeuille (le tien ou celui d'un autre utilisateur), la
+              suppression sera refusée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -7,11 +7,21 @@ export const loginSchema = z.object({
 
 export type LoginFormValues = z.infer<typeof loginSchema>
 
+// Matches the backend rule exactly: 15-64 characters, no composition
+// requirement (uppercase/digit/symbol) — that's the NIST SP 800-63B
+// recommendation the API follows. The backend additionally rejects
+// passwords found in a known breach (HaveIBeenPwned), surfaced as a 422
+// on `errors.password` that the form displays like any other field error.
+export const passwordSchema = z
+  .string()
+  .min(15, "15 caractères minimum")
+  .max(64, "64 caractères maximum")
+
 export const registerSchema = z
   .object({
     name: z.string().min(1, "Le nom est requis"),
     email: z.string().min(1, "L'email est requis").email("Email invalide"),
-    password: z.string().min(8, "8 caractères minimum"),
+    password: passwordSchema,
     password_confirmation: z.string().min(1, "Confirme ton mot de passe"),
   })
   .refine((data) => data.password === data.password_confirmation, {

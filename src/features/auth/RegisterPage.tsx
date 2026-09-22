@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -14,12 +15,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
+import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
 import { AuthLayout } from "@/features/auth/AuthLayout"
 import { registerSchema, type RegisterFormValues } from "@/features/auth/schemas"
 
 export function RegisterPage() {
   const { register: registerUser, isRegisterPending } = useAuth()
   const navigate = useNavigate()
+  const retryAfter = useRetryAfterCountdown()
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -37,7 +40,12 @@ export function RegisterPage() {
       navigate("/", { replace: true })
     } catch (error) {
       const apiError = toApiError(error)
-      if (apiError.errors) {
+      if (apiError.status === 429) {
+        if (apiError.retryAfterSeconds) retryAfter.start(apiError.retryAfterSeconds)
+        form.setError("root", {
+          message: "Trop de tentatives. Patiente avant de réessayer.",
+        })
+      } else if (apiError.errors) {
         for (const [field, messages] of Object.entries(apiError.errors)) {
           form.setError(field as keyof RegisterFormValues, {
             message: messages[0],
@@ -97,6 +105,9 @@ export function RegisterPage() {
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      15 caractères minimum, sans contrainte de casse ou de chiffre.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -123,8 +134,16 @@ export function RegisterPage() {
                   {form.formState.errors.root.message}
                 </p>
               )}
-              <Button type="submit" disabled={isRegisterPending} className="mt-1">
-                {isRegisterPending ? "Création..." : "Créer le compte"}
+              <Button
+                type="submit"
+                disabled={isRegisterPending || retryAfter.secondsLeft > 0}
+                className="mt-1"
+              >
+                {retryAfter.secondsLeft > 0
+                  ? `Réessaie dans ${retryAfter.secondsLeft}s`
+                  : isRegisterPending
+                    ? "Création..."
+                    : "Créer le compte"}
               </Button>
             </form>
           </Form>

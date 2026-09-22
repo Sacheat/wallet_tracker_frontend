@@ -59,6 +59,11 @@ export interface ApiErrorShape {
   message: string
   errors?: Record<string, string[]>
   status?: number
+  // Seconds to wait before retrying, parsed from the `Retry-After` header
+  // that the public auth routes (login/register/forgot/reset-password,
+  // 5 req/min/IP) and a couple of `session`-scoped routes (6 req/min) send
+  // alongside a 429.
+  retryAfterSeconds?: number
 }
 
 export function toApiError(error: unknown): ApiErrorShape {
@@ -66,10 +71,19 @@ export function toApiError(error: unknown): ApiErrorShape {
     const data = error.response?.data as
       | { message?: string; errors?: Record<string, string[]> }
       | undefined
+
+    let retryAfterSeconds: number | undefined
+    if (error.response?.status === 429) {
+      const header = error.response.headers?.["retry-after"]
+      const parsed = header ? Number(header) : NaN
+      if (Number.isFinite(parsed)) retryAfterSeconds = parsed
+    }
+
     return {
       message: data?.message ?? error.message,
       errors: data?.errors,
       status: error.response?.status,
+      retryAfterSeconds,
     }
   }
   return { message: "Une erreur inattendue est survenue." }

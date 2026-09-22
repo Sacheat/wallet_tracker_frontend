@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
+import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
 import { AuthLayout } from "@/features/auth/AuthLayout"
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas"
 
@@ -21,6 +22,7 @@ export function LoginPage() {
   const { login, isLoginPending } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const retryAfter = useRetryAfterCountdown()
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -34,7 +36,14 @@ export function LoginPage() {
       navigate(from?.pathname ?? "/", { replace: true })
     } catch (error) {
       const apiError = toApiError(error)
-      form.setError("root", { message: apiError.message })
+      if (apiError.status === 429) {
+        if (apiError.retryAfterSeconds) retryAfter.start(apiError.retryAfterSeconds)
+        form.setError("root", {
+          message: "Trop de tentatives. Patiente avant de réessayer.",
+        })
+      } else {
+        form.setError("root", { message: apiError.message })
+      }
     }
   }
 
@@ -82,8 +91,16 @@ export function LoginPage() {
                   {form.formState.errors.root.message}
                 </p>
               )}
-              <Button type="submit" disabled={isLoginPending} className="mt-1">
-                {isLoginPending ? "Connexion..." : "Se connecter"}
+              <Button
+                type="submit"
+                disabled={isLoginPending || retryAfter.secondsLeft > 0}
+                className="mt-1"
+              >
+                {retryAfter.secondsLeft > 0
+                  ? `Réessaie dans ${retryAfter.secondsLeft}s`
+                  : isLoginPending
+                    ? "Connexion..."
+                    : "Se connecter"}
               </Button>
             </form>
           </Form>
