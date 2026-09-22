@@ -1,5 +1,4 @@
 import { useId, useMemo, useRef, useState } from "react"
-import { formatUsd } from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
 import type { PricePoint } from "@/types/api"
 
@@ -16,7 +15,17 @@ const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
   minute: "2-digit",
 })
 
-export function PriceHistoryChart({ points }: { points: PricePoint[] }) {
+export function PriceHistoryChart({
+  points,
+  formatPrice,
+}: {
+  points: PricePoint[]
+  // Points come in USD from the API; the caller supplies the conversion to
+  // the user's preferred currency (useCurrency().format) so this component
+  // stays currency-agnostic - only the label changes, not the plotted shape
+  // (a uniform FX rate is just a linear rescale, geometry stays in raw USD).
+  formatPrice: (amountUsd: number) => string
+}) {
   const gradientId = useId()
   const svgRef = useRef<SVGSVGElement>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
@@ -91,7 +100,7 @@ export function PriceHistoryChart({ points }: { points: PricePoint[] }) {
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
         className="w-full"
         role="img"
-        aria-label={`Historique de prix sur 7 jours, dernier prix ${formatUsd(data[lastIndex].price)}`}
+        aria-label={`Historique de prix sur 7 jours, dernier prix ${formatPrice(data[lastIndex].price)}`}
       >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -157,7 +166,7 @@ export function PriceHistoryChart({ points }: { points: PricePoint[] }) {
           transform: active.x > WIDTH / 2 ? "translateX(-100%)" : undefined,
         }}
       >
-        <div className="font-medium tabular-nums">{formatUsd(activeDatum.price)}</div>
+        <div className="font-medium tabular-nums">{formatPrice(activeDatum.price)}</div>
         <div className="text-muted-foreground">{dateFormatter.format(activeDatum.date)}</div>
       </div>
     </div>

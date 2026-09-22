@@ -1,12 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePortfolio } from "@/features/portfolio/hooks"
-import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_LABELS, ASSET_TYPE_ORDER, formatUsd } from "@/lib/format"
+import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_LABELS, ASSET_TYPE_ORDER } from "@/lib/format"
 import { cn } from "@/lib/utils"
+import { useCurrency } from "@/providers/CurrencyProvider"
 import type { AssetType } from "@/types/api"
 
 export function AllocationBar() {
   const { data, isLoading } = usePortfolio()
+  const { format } = useCurrency()
 
   if (isLoading) {
     return (
@@ -78,7 +80,7 @@ export function AllocationBar() {
             </li>
           ))}
         </ul>
-        <p className="text-muted-foreground text-xs">{formatUsd(total)} au total</p>
+        <p className="text-muted-foreground text-xs">{format(total)} au total</p>
       </CardContent>
     </Card>
   )

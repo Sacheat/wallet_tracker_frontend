@@ -19,6 +19,16 @@ export function useUpdatePassword() {
   return useMutation({ mutationFn: accountApi.updatePassword })
 }
 
+export function useUpdateCurrency() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: accountApi.updateCurrency,
+    onSuccess: (user) => {
+      queryClient.setQueryData(authQueryKey, user)
+    },
+  })
+}
+
 export function useUploadAvatar() {
   const queryClient = useQueryClient()
   return useMutation({

@@ -7,12 +7,14 @@ import { GainLossValue } from "@/components/GainLossValue"
 import { PriceHistoryChart } from "@/components/PriceHistoryChart"
 import { StatTile } from "@/components/StatTile"
 import { useAsset, useAssetDetails, useAssetNews } from "@/features/assets/hooks"
-import { ASSET_TYPE_LABELS, formatUsd } from "@/lib/format"
+import { ASSET_TYPE_LABELS } from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
+import { useCurrency } from "@/providers/CurrencyProvider"
 
 export function AssetDetailPage() {
   const params = useParams<{ id: string }>()
   const id = Number(params.id)
+  const { format } = useCurrency()
 
   const { data: asset, isLoading: assetLoading } = useAsset(id)
   const { data: details, isLoading: detailsLoading, isError: detailsError } = useAssetDetails(id)
@@ -71,7 +73,7 @@ export function AssetDetailPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <StatTile
               label="Prix actuel"
-              value={formatUsd(details.price_usd)}
+              value={format(details.price_usd)}
               secondaryValue={
                 <div className="flex gap-3">
                   <span>1h <GainLossValue value={details.change_percent["1h"]} /></span>
@@ -81,7 +83,7 @@ export function AssetDetailPage() {
               }
             />
             {details.market_cap_usd !== null && (
-              <StatTile label="Capitalisation" value={formatUsd(details.market_cap_usd)} />
+              <StatTile label="Capitalisation" value={format(details.market_cap_usd)} />
             )}
           </div>
 
@@ -90,7 +92,7 @@ export function AssetDetailPage() {
               <CardTitle className="text-sm">Historique 7 jours</CardTitle>
             </CardHeader>
             <CardContent>
-              <PriceHistoryChart points={details.history_7d} />
+              <PriceHistoryChart points={details.history_7d} formatPrice={format} />
             </CardContent>
           </Card>
 

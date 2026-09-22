@@ -51,10 +51,11 @@ import {
   usePortfolioTable,
   type PortfolioTableRow,
 } from "@/features/portfolio/hooks"
-import { ASSET_TYPE_LABELS, formatEur, formatQuantity, formatUsd } from "@/lib/format"
+import { ASSET_TYPE_LABELS, formatQuantity, formatUsd } from "@/lib/format"
 import { downloadCsv } from "@/lib/csv"
 import { toApiError } from "@/lib/http-client"
 import { cn } from "@/lib/utils"
+import { useCurrency } from "@/providers/CurrencyProvider"
 
 type SortKey = "value" | "name" | "type" | "platform" | "quantity" | "change24h"
 
@@ -105,12 +106,12 @@ export function PortfolioPage() {
   const {
     rows,
     totalValueUsd,
-    totalValueEur,
     totalChangePercent,
     isLoading,
     isError,
     isValuationUnavailable,
   } = usePortfolioTable()
+  const { currency, format } = useCurrency()
   const [editingRow, setEditingRow] = useState<PortfolioTableRow | null>(null)
   const [deletingRow, setDeletingRow] = useState<PortfolioTableRow | null>(null)
   const [search, setSearch] = useState("")
@@ -242,10 +243,12 @@ export function PortfolioPage() {
             </span>
           ) : row.valueUsd !== null ? (
             <div className="flex flex-col">
-              <span className="font-medium">{formatUsd(row.valueUsd)}</span>
-              <span className="text-muted-foreground text-xs">
-                {formatEur(row.valueEur ?? 0)}
-              </span>
+              <span className="font-medium">{format(row.valueUsd)}</span>
+              {currency !== "USD" && (
+                <span className="text-muted-foreground text-xs">
+                  {formatUsd(row.valueUsd)}
+                </span>
+              )}
             </div>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -284,11 +287,13 @@ export function PortfolioPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         <StatTile
           label="Valeur totale"
-          value={totalValueUsd !== null ? formatUsd(totalValueUsd) : "—"}
+          value={totalValueUsd !== null ? format(totalValueUsd) : "—"}
           delta={totalChangePercent && <GainLossValue value={totalChangePercent["24h"]} />}
           secondaryValue={
             <div className="flex flex-col gap-1">
-              {totalValueEur !== null && <span>{formatEur(totalValueEur)}</span>}
+              {currency !== "USD" && totalValueUsd !== null && (
+                <span>{formatUsd(totalValueUsd)}</span>
+              )}
               {totalChangePercent && (
                 <div className="flex gap-3 text-xs">
                   <span>1h <GainLossValue value={totalChangePercent["1h"]} /></span>
@@ -411,7 +416,7 @@ export function PortfolioPage() {
                             <TableCell colSpan={7} className="text-muted-foreground py-1.5 text-xs font-medium">
                               {platformName}
                               <span className="ml-2">
-                                {formatUsd(
+                                {format(
                                   platformRows.reduce((s, r) => s + (r.valueUsd ?? 0), 0),
                                 )}
                               </span>

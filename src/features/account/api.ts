@@ -1,5 +1,5 @@
 import { httpClient } from "@/lib/http-client"
-import type { User } from "@/types/api"
+import type { CurrencyCode, User } from "@/types/api"
 
 export interface UpdateProfilePayload {
   name: string
@@ -22,6 +22,14 @@ export async function updateProfile(payload: UpdateProfilePayload) {
 
 export async function updatePassword(payload: UpdatePasswordPayload) {
   await httpClient.patch("/user/password", payload)
+}
+
+// Separate from updateProfile: `currency` is optional/standalone on
+// PATCH /user (no current_password needed, unlike email), so it gets its
+// own mutation rather than being bundled into the name/email form.
+export async function updateCurrency(currency: CurrencyCode) {
+  const { data } = await httpClient.patch<User>("/user", { currency })
+  return data
 }
 
 export async function uploadAvatar(blob: Blob) {

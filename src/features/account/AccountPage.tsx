@@ -1,4 +1,5 @@
 import { AvatarSection } from "@/features/account/AvatarSection"
+import { CurrencySection } from "@/features/account/CurrencySection"
 import { DangerZoneSection } from "@/features/account/DangerZoneSection"
 import { PasswordSection } from "@/features/account/PasswordSection"
 import { ProfileSection } from "@/features/account/ProfileSection"
@@ -20,6 +21,7 @@ export function AccountPage() {
       </div>
       <AvatarSection user={user} />
       <ProfileSection user={user} />
+      <CurrencySection />
       <PasswordSection />
       <DangerZoneSection />
     </div>

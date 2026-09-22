@@ -6,12 +6,6 @@ const usdFormatter = new Intl.NumberFormat("fr-FR", {
   maximumFractionDigits: 2,
 })
 
-const eurFormatter = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
-  maximumFractionDigits: 2,
-})
-
 // Intl's fr-FR grouping separator is a narrow no-break space (U+202F),
 // which many fonts render as invisible. Swap it for a regular no-break
 // space (U+00A0) so "100 000,75" actually shows a visible gap.
@@ -19,12 +13,12 @@ function withVisibleNbsp(formatted: string) {
   return formatted.replace(/ /g, " ")
 }
 
+// Fixed-USD formatter, used only where a raw-USD reference figure is shown
+// alongside an amount already converted to the user's preferred currency -
+// see lib/currency.ts's formatMoney/useCurrency for the preference-aware
+// path most money in the app should go through instead.
 export function formatUsd(value: number) {
   return withVisibleNbsp(usdFormatter.format(value))
-}
-
-export function formatEur(value: number) {
-  return withVisibleNbsp(eurFormatter.format(value))
 }
 
 export function formatPercent(value: number | null) {

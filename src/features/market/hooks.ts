@@ -15,6 +15,22 @@ export function useFearGreedIndex() {
   })
 }
 
+/**
+ * Backend caches this 45s server-side; staleTime here is deliberately much
+ * longer than that (FX rates barely move minute to minute) so switching
+ * screens doesn't refetch on every navigation given the shared 60req/min
+ * limit. `enabled: false` when the caller already knows the user's currency
+ * is USD (CurrencyProvider does this) - no rate is needed to display USD.
+ */
+export function useExchangeRates(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ["market", "exchange-rates"],
+    queryFn: marketApi.getExchangeRates,
+    staleTime: 5 * 60_000,
+    enabled: options?.enabled,
+  })
+}
+
 export interface PortfolioMover {
   asset: Asset
   change24h: number

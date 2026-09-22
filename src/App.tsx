@@ -16,6 +16,7 @@ import { MarketPage } from "@/features/market/MarketPage"
 import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
 import { queryClient } from "@/lib/query-client"
 import { authQueryKey, AuthProvider } from "@/providers/AuthProvider"
+import { CurrencyProvider } from "@/providers/CurrencyProvider"
 import { ThemeProvider } from "@/providers/ThemeProvider"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
@@ -81,8 +82,10 @@ export default function App() {
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <AppRoutes />
-          <Toaster />
+          <CurrencyProvider>
+            <AppRoutes />
+            <Toaster />
+          </CurrencyProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

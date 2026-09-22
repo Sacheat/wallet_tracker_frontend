@@ -1,5 +1,7 @@
 export type AssetType = "crypto" | "stock" | "gold" | "etf"
 
+export type CurrencyCode = "USD" | "EUR" | "GBP" | "CHF"
+
 export interface User {
   id: number
   name: string
@@ -7,6 +9,17 @@ export interface User {
   created_at: string
   email_verified_at: string | null
   avatar_url: string | null
+  currency: CurrencyCode
+}
+
+// GET /api/exchange-rates - shares the same 45s-TTL cache/source as
+// /api/portfolio's total_value_by_currency, so the two stay consistent.
+// A rate is null only if that currency's FX quote couldn't be fetched (same
+// gotcha as total_value_by_currency).
+export interface ExchangeRatesResponse {
+  base: "USD"
+  rates: Record<Exclude<CurrencyCode, "USD">, number | null>
+  updated_at: string
 }
 
 export interface Asset {
