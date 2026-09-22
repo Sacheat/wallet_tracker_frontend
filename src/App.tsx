@@ -3,6 +3,7 @@ import { useEffect } from "react"
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
 import { Toaster } from "@/components/ui/sonner"
+import { AccountPage } from "@/features/account/AccountPage"
 import { AlertsPage } from "@/features/alerts/AlertsPage"
 import { AssetDetailPage } from "@/features/assets/AssetDetailPage"
 import { AuditPage } from "@/features/audit/AuditPage"
@@ -67,6 +68,7 @@ function AppRoutes() {
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/audit" element={<AuditPage />} />
           <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/account" element={<AccountPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

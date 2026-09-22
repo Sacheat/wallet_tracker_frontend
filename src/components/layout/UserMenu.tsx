@@ -1,7 +1,7 @@
-import { LogOut, User } from "lucide-react"
+import { LogOut, User as UserIcon, UserCog } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -44,8 +44,9 @@ export function UserMenu() {
         render={
           <Button variant="ghost" className="gap-2 px-2">
             <Avatar className="size-6">
+              <AvatarImage src={user.avatar_url ?? undefined} alt="" />
               <AvatarFallback className="text-xs">
-                {initials(user.name) || <User className="size-3.5" />}
+                {initials(user.name) || <UserIcon className="size-3.5" />}
               </AvatarFallback>
             </Avatar>
             <span className="max-w-32 truncate text-sm">{user.name}</span>
@@ -61,6 +62,10 @@ export function UserMenu() {
             </div>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => navigate("/account")}>
+          <UserCog /> Mon compte
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={handleLogout}>
           <LogOut /> Se déconnecter
