@@ -117,6 +117,21 @@ export function AssetFormDialog({
     setIsSearchFocused(false)
   }
 
+  // The provider id has no manual input anymore - it's either set by
+  // picking a search result, or (for gold, which the search API doesn't
+  // index at all - see api_reference memory) fixed to the one value the
+  // backend expects. Clears it back out if the type moves away from gold,
+  // so a stale "GC=F" can't silently linger on a non-gold asset.
+  function handleTypeChange(value: AssetFormValues["type"] | null) {
+    if (value === null) return
+    form.setValue("type", value, { shouldDirty: true })
+    if (value === "gold") {
+      form.setValue("external_id", "GC=F", { shouldDirty: true })
+    } else if (form.getValues("external_id") === "GC=F") {
+      form.setValue("external_id", "", { shouldDirty: true })
+    }
+  }
+
   async function onSubmit(values: AssetFormValues) {
     const payload = {
       ...values,
@@ -185,13 +200,23 @@ export function AssetFormDialog({
                   />
                 </div>
                 {showResults && (
-                  <div className="bg-popover border-border absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border p-1 shadow-lg">
+                  <div
+                    // A plain mousedown on the scrollbar (not on a result
+                    // button) still bubbles here - without this, it blurs
+                    // the input first and closes the dropdown before the
+                    // click/drag can register, making the scrollbar
+                    // unusable. Guarding at the container level (rather
+                    // than only on each button) fixes that for any mousedown
+                    // inside, including the scrollbar track itself.
+                    onMouseDown={(e) => e.preventDefault()}
+                    className="bg-popover border-border absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border p-1 shadow-lg"
+                  >
                     {isSearching ? (
                       <p className="text-muted-foreground p-3 text-sm">Recherche...</p>
                     ) : searchResults.length === 0 ? (
                       <p className="text-muted-foreground p-3 text-sm">
-                        Aucun résultat — pour l'or, remplis les champs manuellement
-                        (identifiant provider <code>GC=F</code>).
+                        Aucun résultat — pour l'or, choisis simplement le type « Or »
+                        dans le formulaire ci-dessous.
                       </p>
                     ) : (
                       searchResults.map((result) => (
@@ -267,7 +292,7 @@ export function AssetFormDialog({
                     <FormControl>
                       <Select
                         value={field.value}
-                        onValueChange={field.onChange}
+                        onValueChange={handleTypeChange}
                         items={ASSET_TYPE_LABELS}
                       >
                         <SelectTrigger className="w-full">
@@ -287,19 +312,6 @@ export function AssetFormDialog({
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="external_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Identifiant provider (optionnel)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="bitcoin, AAPL, GC=F..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="logo_url"
