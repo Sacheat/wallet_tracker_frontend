@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
 import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
@@ -26,7 +27,7 @@ export function LoginPage() {
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", remember: false },
   })
 
   async function onSubmit(values: LoginFormValues) {
@@ -91,6 +92,18 @@ export function LoginPage() {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="remember"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-2">
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                    <FormLabel className="font-normal">Se souvenir de moi</FormLabel>
                   </FormItem>
                 )}
               />

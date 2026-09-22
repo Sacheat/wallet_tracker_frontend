@@ -5,6 +5,9 @@ import type { User } from "@/types/api"
 export interface LoginPayload {
   email: string
   password: string
+  // Verified live (2026-09-22): posts an additional long-lived
+  // remember_web_... cookie alongside the normal session cookie.
+  remember?: boolean
 }
 
 export interface RegisterPayload {
