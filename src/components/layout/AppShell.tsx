@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { Bell, History, LayoutGrid, LineChart, Wallet } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { Footer } from "@/components/layout/Footer"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { UserMenu } from "@/components/layout/UserMenu"
 
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-background min-h-svh">
+    <div className="bg-background flex min-h-svh flex-col">
       <header className="border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
         <div className="mx-auto flex min-h-14 max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 sm:px-6">
           <span className="text-foreground mr-2 shrink-0 text-sm font-semibold tracking-tight">
@@ -45,9 +46,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <UserMenu />
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         {children}
       </main>
+      <Footer />
     </div>
   )
 }

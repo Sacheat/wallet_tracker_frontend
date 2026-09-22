@@ -1,7 +1,8 @@
 import { QueryClientProvider, useQueryClient } from "@tanstack/react-query"
 import { useEffect } from "react"
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom"
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { OfflineBanner } from "@/components/OfflineBanner"
 import { Toaster } from "@/components/ui/sonner"
 import { AccountPage } from "@/features/account/AccountPage"
 import { AlertsPage } from "@/features/alerts/AlertsPage"
@@ -19,6 +20,7 @@ import { authQueryKey, AuthProvider } from "@/providers/AuthProvider"
 import { CurrencyProvider } from "@/providers/CurrencyProvider"
 import { OnboardingProvider } from "@/providers/OnboardingProvider"
 import { ThemeProvider } from "@/providers/ThemeProvider"
+import { NotFoundPage } from "@/routes/NotFoundPage"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
 
@@ -72,7 +74,7 @@ function AppRoutes() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/account" element={<AccountPage />} />
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ErrorBoundary>
   )
@@ -85,6 +87,7 @@ export default function App() {
         <AuthProvider>
           <CurrencyProvider>
             <OnboardingProvider>
+              <OfflineBanner />
               <AppRoutes />
               <Toaster />
             </OnboardingProvider>
