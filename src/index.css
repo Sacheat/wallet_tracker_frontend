@@ -77,7 +77,13 @@
     /* Used only for the hero stat's gradient wash (see .stat-hero) - not a
        general-purpose token, deliberately spent in one place. */
     --accent-warm: #FF8B5C;
-    --chart-1: #2a78d6;
+    /* Categorical palette for the market allocation chart (crypto/stock/
+       gold/etf, fixed order - never reassigned) - chart-1 now matches the
+       primary violet family instead of the old blue; 2-4 kept as-is.
+       Re-validated with the dataviz skill's script after the swap:
+       node scripts/validate_palette.js "#6C5CE7,#EB6834,#1BAF7A,#EDA100" --mode light
+       all checks pass (CVD ΔE 9.1+, normal-vision floor 22.9+). */
+    --chart-1: #6C5CE7;
     --chart-2: #eb6834;
     --chart-3: #1baf7a;
     --chart-4: #eda100;
@@ -116,7 +122,10 @@
     --loss: #e66767;
     --warning: #fab219;
     --accent-warm: #FF9B72;
-    --chart-1: #3987e5;
+    /* Re-validated after the chart-1 swap:
+       node scripts/validate_palette.js "#8C7EFF,#D95926,#199E70,#C98500" --mode dark
+       all checks pass (CVD ΔE 8.4+, normal-vision floor 19.8+). */
+    --chart-1: #8C7EFF;
     --chart-2: #d95926;
     --chart-3: #199e70;
     --chart-4: #c98500;
@@ -175,5 +184,35 @@
     width: 60%;
     background: radial-gradient(circle, var(--accent-warm) 0%, transparent 70%);
     opacity: 0.14;
+  }
+
+  /*
+   * The other deliberate "wow" spot: a slowly rotating gradient ring around
+   * AI-generated content specifically (the natural-language alert preview
+   * today, more spots later) - a visual signal that this box came from the
+   * model, not a decoration reused elsewhere. Two nested elements: this one
+   * IS the border (a conic-gradient background showing through 1.5px of
+   * padding), the child renders the real surface on top.
+   */
+  .ai-glow-border {
+    background: conic-gradient(from var(--angle, 0deg), var(--primary), var(--accent-warm), var(--primary));
+    animation: ai-border-spin 3s linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ai-glow-border {
+      animation: none;
+    }
+  }
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ai-border-spin {
+  to {
+    --angle: 360deg;
   }
 }

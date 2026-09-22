@@ -6,8 +6,8 @@ import { useFearGreedIndex } from "@/features/market/hooks"
 
 function sentimentClass(classification: string) {
   const normalized = classification.toLowerCase()
-  if (normalized.includes("fear")) return "bg-loss"
-  if (normalized.includes("greed")) return "bg-gain"
+  if (normalized.includes("fear")) return "bg-loss shadow-[0_0_12px_-1px_var(--loss)]"
+  if (normalized.includes("greed")) return "bg-gain shadow-[0_0_12px_-1px_var(--gain)]"
   return "bg-muted-foreground"
 }
 
@@ -30,7 +30,7 @@ export function FearGreedGauge() {
         ) : (
           <div className="flex flex-col gap-3">
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-semibold tracking-tight tabular-nums">
+              <span className="text-2xl font-bold tracking-tight tabular-nums">
                 {data.value}
               </span>
               <span className="text-muted-foreground text-sm">/ 100 · {data.classification}</span>

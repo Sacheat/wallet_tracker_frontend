@@ -142,23 +142,25 @@ export function ParseAlertForm({
       )}
 
       {preview && (
-        <div className="bg-muted/40 flex flex-col gap-3 rounded-lg border px-3 py-3 text-sm">
-          <p>
-            On a compris :{" "}
-            <span className="font-medium">{describePreview(preview, currency)}</span>
-          </p>
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleConfirm}
-              disabled={createAlert.isPending}
-            >
-              {createAlert.isPending ? "Création..." : "Confirmer"}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setPreview(null)}>
-              Annuler
-            </Button>
+        <div className="ai-glow-border rounded-lg p-[1.5px]">
+          <div className="bg-card flex flex-col gap-3 rounded-[calc(var(--radius-lg)-1.5px)] px-3 py-3 text-sm">
+            <p>
+              On a compris :{" "}
+              <span className="font-medium">{describePreview(preview, currency)}</span>
+            </p>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleConfirm}
+                disabled={createAlert.isPending}
+              >
+                {createAlert.isPending ? "Création..." : "Confirmer"}
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setPreview(null)}>
+                Annuler
+              </Button>
+            </div>
           </div>
         </div>
       )}

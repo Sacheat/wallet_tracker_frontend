@@ -27,6 +27,8 @@ export function PriceHistoryChart({
   formatPrice: (amountUsd: number) => string
 }) {
   const gradientId = useId()
+  const strokeGradientId = useId()
+  const glowId = useId()
   const svgRef = useRef<SVGSVGElement>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
@@ -107,16 +109,31 @@ export function PriceHistoryChart({
             <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.18" />
             <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
           </linearGradient>
+          {/* The chart's one signature touch: a violet-to-warm stroke with a
+              soft glow, echoing the hero gradient used on the page's stat
+              tiles - reserved for this line, not the area fill beneath it. */}
+          <linearGradient id={strokeGradientId} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="var(--primary)" />
+            <stop offset="100%" stopColor="var(--accent-warm)" />
+          </linearGradient>
+          <filter id={glowId} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
         </defs>
 
         <path d={areaPath} fill={`url(#${gradientId})`} stroke="none" />
         <path
           d={linePath}
           fill="none"
-          stroke="var(--primary)"
+          stroke={`url(#${strokeGradientId})`}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="round"
+          filter={`url(#${glowId})`}
         />
 
         {hoverIndex !== null && (

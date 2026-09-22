@@ -9,6 +9,7 @@ import { StatTile } from "@/components/StatTile"
 import { useAsset, useAssetDetails, useAssetNews } from "@/features/assets/hooks"
 import { ASSET_TYPE_LABELS } from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
+import { useAnimatedNumber } from "@/lib/use-animated-number"
 import { useCurrency } from "@/providers/CurrencyProvider"
 
 export function AssetDetailPage() {
@@ -19,6 +20,7 @@ export function AssetDetailPage() {
   const { data: asset, isLoading: assetLoading } = useAsset(id)
   const { data: details, isLoading: detailsLoading, isError: detailsError } = useAssetDetails(id)
   const { data: news = [] } = useAssetNews(id)
+  const animatedPrice = useAnimatedNumber(details?.price_usd ?? null)
 
   if (assetLoading) {
     return (
@@ -72,8 +74,9 @@ export function AssetDetailPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <StatTile
+              className="stat-hero"
               label="Prix actuel"
-              value={format(details.price_usd)}
+              value={format(animatedPrice ?? details.price_usd)}
               secondaryValue={
                 <div className="flex gap-3">
                   <span>1h <GainLossValue value={details.change_percent["1h"]} /></span>
