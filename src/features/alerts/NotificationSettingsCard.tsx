@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect } from "react"
+import { Eye, EyeOff } from "lucide-react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -25,6 +26,11 @@ import { toApiError } from "@/lib/http-client"
 export function NotificationSettingsCard() {
   const { data: settings, isLoading } = useNotificationSettings()
   const updateSettings = useUpdateNotificationSettings()
+  // Anyone holding this URL can post into the Discord channel, so it's a
+  // secret like a password - masked by default, but with a reveal toggle
+  // (unlike a login password, this is a value people legitimately need to
+  // double-check or copy correctly from time to time).
+  const [showWebhook, setShowWebhook] = useState(false)
 
   const form = useForm<NotificationSettingsFormValues>({
     resolver: zodResolver(notificationSettingsSchema),
@@ -120,10 +126,26 @@ export function NotificationSettingsCard() {
                 <FormItem>
                   <FormLabel>Webhook Discord (optionnel)</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="https://discord.com/api/webhooks/..."
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showWebhook ? "text" : "password"}
+                        placeholder="https://discord.com/api/webhooks/..."
+                        className="pr-9"
+                        {...field}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowWebhook((v) => !v)}
+                        className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2"
+                        aria-label={showWebhook ? "Masquer l'URL" : "Afficher l'URL"}
+                      >
+                        {showWebhook ? (
+                          <EyeOff className="size-4" />
+                        ) : (
+                          <Eye className="size-4" />
+                        )}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
