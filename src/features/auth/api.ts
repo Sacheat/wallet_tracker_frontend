@@ -28,6 +28,26 @@ export async function logout() {
   await httpClient.post("/logout")
 }
 
+export interface ResetPasswordPayload {
+  token: string
+  email: string
+  password: string
+  password_confirmation: string
+}
+
+// Always responds 200 with the same neutral message whether or not the
+// email matches an account - never use the response to infer that.
+export async function forgotPassword(email: string) {
+  const { data } = await httpClient.post<{ message: string }>("/forgot-password", {
+    email,
+  })
+  return data
+}
+
+export async function resetPassword(payload: ResetPasswordPayload) {
+  await httpClient.post("/reset-password", payload)
+}
+
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const { data } = await httpClient.get<User>("/user")

@@ -6,8 +6,10 @@ import { Toaster } from "@/components/ui/sonner"
 import { AlertsPage } from "@/features/alerts/AlertsPage"
 import { AssetDetailPage } from "@/features/assets/AssetDetailPage"
 import { AuditPage } from "@/features/audit/AuditPage"
+import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage"
 import { LoginPage } from "@/features/auth/LoginPage"
 import { RegisterPage } from "@/features/auth/RegisterPage"
+import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage"
 import { CatalogPage } from "@/features/catalog/CatalogPage"
 import { MarketPage } from "@/features/market/MarketPage"
 import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
@@ -55,6 +57,8 @@ function AppRoutes() {
         <Route element={<PublicOnlyRoute />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route index element={<PortfolioPage />} />

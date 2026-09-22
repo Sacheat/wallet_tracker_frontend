@@ -74,7 +74,15 @@ export function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mot de passe</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Mot de passe</FormLabel>
+                      <Link
+                        to="/forgot-password"
+                        className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-4"
+                      >
+                        Mot de passe oublié ?
+                      </Link>
+                    </div>
                     <FormControl>
                       <Input
                         type="password"

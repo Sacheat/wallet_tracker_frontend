@@ -30,3 +30,21 @@ export const registerSchema = z
   })
 
 export type RegisterFormValues = z.infer<typeof registerSchema>
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().min(1, "L'email est requis").email("Email invalide"),
+})
+
+export type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+
+export const resetPasswordSchema = z
+  .object({
+    password: passwordSchema,
+    password_confirmation: z.string().min(1, "Confirme ton mot de passe"),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["password_confirmation"],
+  })
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>
