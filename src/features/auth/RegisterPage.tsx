@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/PasswordInput"
 import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
 import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
@@ -99,11 +100,7 @@ export function RegisterPage() {
                   <FormItem>
                     <FormLabel>Mot de passe</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormDescription>
                       15 caractères minimum, sans contrainte de casse ou de chiffre.
@@ -119,11 +116,7 @@ export function RegisterPage() {
                   <FormItem>
                     <FormLabel>Confirmer le mot de passe</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="new-password"
-                        {...field}
-                      />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

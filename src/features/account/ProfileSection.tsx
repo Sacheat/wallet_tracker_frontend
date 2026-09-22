@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/PasswordInput"
 import { useUpdateProfile } from "@/features/account/hooks"
 import { buildProfileSchema, type ProfileFormValues } from "@/features/account/schemas"
 import { toApiError } from "@/lib/http-client"
@@ -95,11 +96,7 @@ export function ProfileSection({ user }: { user: User }) {
                   <FormItem>
                     <FormLabel>Mot de passe actuel</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="current-password"
-                        {...field}
-                      />
+                      <PasswordInput autoComplete="current-password" {...field} />
                     </FormControl>
                     <FormDescription>
                       Requis pour changer d'email. Ton compte redeviendra "non

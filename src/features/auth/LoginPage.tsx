@@ -12,6 +12,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/PasswordInput"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
@@ -85,11 +86,7 @@ export function LoginPage() {
                       </Link>
                     </div>
                     <FormControl>
-                      <Input
-                        type="password"
-                        autoComplete="current-password"
-                        {...field}
-                      />
+                      <PasswordInput autoComplete="current-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

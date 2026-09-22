@@ -13,7 +13,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/PasswordInput"
 import * as authApi from "@/features/auth/api"
 import { AuthLayout } from "@/features/auth/AuthLayout"
 import {
@@ -120,7 +120,7 @@ export function ResetPasswordPage() {
                   <FormItem>
                     <FormLabel>Nouveau mot de passe</FormLabel>
                     <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormDescription>
                       15 caractères minimum, sans contrainte de casse ou de chiffre.
@@ -136,7 +136,7 @@ export function ResetPasswordPage() {
                   <FormItem>
                     <FormLabel>Confirmer le mot de passe</FormLabel>
                     <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
+                      <PasswordInput autoComplete="new-password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
