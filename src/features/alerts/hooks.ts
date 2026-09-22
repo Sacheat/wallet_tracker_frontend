@@ -28,6 +28,13 @@ export function useUpdateAlert() {
   })
 }
 
+// No query invalidation - a parse is a read-only preview, nothing changes
+// server-side until the caller separately calls useCreateAlert with the
+// confirmed fields.
+export function useParseAlert() {
+  return useMutation({ mutationFn: alertsApi.parseAlert })
+}
+
 export function useDeleteAlert() {
   const queryClient = useQueryClient()
   return useMutation({

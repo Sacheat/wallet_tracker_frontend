@@ -1,5 +1,11 @@
 import { httpClient } from "@/lib/http-client"
-import type { AlertWindow, NotificationSettings, PriceAlert, PriceAlertType } from "@/types/api"
+import type {
+  AlertWindow,
+  NotificationSettings,
+  ParseAlertResponse,
+  PriceAlert,
+  PriceAlertType,
+} from "@/types/api"
 
 export interface CreateAlertPayload {
   type: PriceAlertType
@@ -33,6 +39,15 @@ export async function updateAlert(id: number, payload: UpdateAlertPayload) {
 
 export async function deleteAlert(id: number) {
   await httpClient.delete(`/api/price-alerts/${id}`)
+}
+
+// Preview only - never creates anything itself. Caller confirms, then
+// submits the returned fields through the regular createAlert/POST above.
+export async function parseAlert(text: string) {
+  const { data } = await httpClient.post<ParseAlertResponse>("/api/price-alerts/parse", {
+    text,
+  })
+  return data
 }
 
 export async function getNotificationSettings() {

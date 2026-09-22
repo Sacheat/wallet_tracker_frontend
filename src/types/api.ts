@@ -135,6 +135,20 @@ export interface PriceAlert {
   is_active: boolean
 }
 
+// POST /api/price-alerts/parse - preview only, never creates the alert.
+// threshold here is in the account's currency (not yet converted to USD -
+// that conversion happens server-side only at the real POST /api/price-alerts
+// call, same as a manually-typed threshold), so it's a plain JSON number,
+// not the decimal-string convention PriceAlert.threshold has.
+export interface ParseAlertResponse {
+  understood: true
+  type: PriceAlertType
+  asset: { id: number; name: string; symbol: string } | null
+  threshold: number | null
+  percent_threshold: number | null
+  window: AlertWindow | null
+}
+
 export interface NotificationSettings {
   email_notifications_enabled: boolean
   discord_webhook_url: string | null

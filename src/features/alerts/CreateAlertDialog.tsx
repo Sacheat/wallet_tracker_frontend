@@ -28,8 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAssets } from "@/features/assets/hooks"
 import { getAlertErrorMessage, useCreateAlert } from "@/features/alerts/hooks"
+import { ParseAlertForm } from "@/features/alerts/ParseAlertForm"
 import {
   createAlertSchema,
   type CreateAlertFormInput,
@@ -43,6 +45,10 @@ const NEEDS_ASSET = new Set(["price_above", "price_below", "percent_change"])
 
 export function CreateAlertDialog() {
   const [open, setOpen] = useState(false)
+  // Natural language first - it's the faster path for the common case and
+  // the feature worth showcasing; manual stays one click away, and is the
+  // automatic fallback when the AI is unavailable (see ParseAlertForm).
+  const [mode, setMode] = useState<"natural" | "manual">("natural")
   const { data: assets = [] } = useAssets()
   const createAlert = useCreateAlert()
   const { currency } = useCurrency()
@@ -79,7 +85,10 @@ export function CreateAlertDialog() {
       open={open}
       onOpenChange={(next) => {
         setOpen(next)
-        if (!next) form.reset({ type: "price_above" })
+        if (!next) {
+          form.reset({ type: "price_above" })
+          setMode("natural")
+        }
       }}
     >
       <DialogTrigger render={<Button><Plus /> Créer une alerte</Button>} />
@@ -87,109 +96,40 @@ export function CreateAlertDialog() {
         <DialogHeader>
           <DialogTitle>Créer une alerte</DialogTitle>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Type d'alerte</FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value}
-                      onValueChange={field.onChange}
-                      items={ALERT_TYPE_LABELS}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(ALERT_TYPE_LABELS).map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+
+        <Tabs value={mode} onValueChange={(value) => setMode(value as "natural" | "manual")}>
+          <TabsList className="mb-2 grid w-full grid-cols-2">
+            <TabsTrigger value="natural">Langage naturel</TabsTrigger>
+            <TabsTrigger value="manual">Formulaire manuel</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="natural">
+            <ParseAlertForm
+              onCreated={() => setOpen(false)}
+              onFallbackToManual={() => setMode("manual")}
             />
+          </TabsContent>
 
-            {NEEDS_ASSET.has(type) && (
-              <FormField
-                control={form.control}
-                name="asset_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Actif</FormLabel>
-                    <FormControl>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        items={assets.map((asset) => ({
-                          value: asset.id,
-                          label: `${asset.name} (${asset.symbol}) · ${ASSET_TYPE_LABELS[asset.type]}`,
-                        }))}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Sélectionner un actif" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {assets.map((asset) => (
-                            <SelectItem key={asset.id} value={asset.id}>
-                              {asset.name} ({asset.symbol}) · {ASSET_TYPE_LABELS[asset.type]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {type === "percent_change" ? (
-              <div className="grid grid-cols-2 gap-4">
+          <TabsContent value="manual">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
                 <FormField
                   control={form.control}
-                  name="percent_threshold"
+                  name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Variation (%)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="any"
-                          min="0"
-                          {...field}
-                          value={(field.value as string | number | undefined) ?? ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="window"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fenêtre</FormLabel>
+                      <FormLabel>Type d'alerte</FormLabel>
                       <FormControl>
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
-                          items={ALERT_WINDOW_LABELS}
+                          items={ALERT_TYPE_LABELS}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choisir" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(ALERT_WINDOW_LABELS).map(([value, label]) => (
+                            {Object.entries(ALERT_TYPE_LABELS).map(([value, label]) => (
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
@@ -201,45 +141,131 @@ export function CreateAlertDialog() {
                     </FormItem>
                   )}
                 />
-              </div>
-            ) : (
-              <FormField
-                control={form.control}
-                name="threshold"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      {type.startsWith("portfolio")
-                        ? `Valeur totale (${currency})`
-                        : `Prix (${currency})`}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="any"
-                        min="0"
-                        {...field}
-                        value={(field.value as string | number | undefined) ?? ""}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
-            {form.formState.errors.root && (
-              <p className="text-destructive text-sm">
-                {form.formState.errors.root.message}
-              </p>
-            )}
-            <DialogFooter>
-              <Button type="submit" disabled={createAlert.isPending}>
-                {createAlert.isPending ? "Création..." : "Créer"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+                {NEEDS_ASSET.has(type) && (
+                  <FormField
+                    control={form.control}
+                    name="asset_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Actif</FormLabel>
+                        <FormControl>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            items={assets.map((asset) => ({
+                              value: asset.id,
+                              label: `${asset.name} (${asset.symbol}) · ${ASSET_TYPE_LABELS[asset.type]}`,
+                            }))}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionner un actif" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {assets.map((asset) => (
+                                <SelectItem key={asset.id} value={asset.id}>
+                                  {asset.name} ({asset.symbol}) · {ASSET_TYPE_LABELS[asset.type]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {type === "percent_change" ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="percent_threshold"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Variation (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0"
+                              {...field}
+                              value={(field.value as string | number | undefined) ?? ""}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="window"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fenêtre</FormLabel>
+                          <FormControl>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                              items={ALERT_WINDOW_LABELS}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Choisir" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.entries(ALERT_WINDOW_LABELS).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                ) : (
+                  <FormField
+                    control={form.control}
+                    name="threshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {type.startsWith("portfolio")
+                            ? `Valeur totale (${currency})`
+                            : `Prix (${currency})`}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="any"
+                            min="0"
+                            {...field}
+                            value={(field.value as string | number | undefined) ?? ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {form.formState.errors.root && (
+                  <p className="text-destructive text-sm">
+                    {form.formState.errors.root.message}
+                  </p>
+                )}
+                <DialogFooter>
+                  <Button type="submit" disabled={createAlert.isPending}>
+                    {createAlert.isPending ? "Création..." : "Créer"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   )
