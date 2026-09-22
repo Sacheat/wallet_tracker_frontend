@@ -6,6 +6,12 @@ export interface TourStep {
   // CSS selector for the element to spotlight. Omitted = a centered
   // popover with no cutout (welcome/end steps).
   target?: string
+  // When true, the highlighted element stays genuinely clickable during
+  // this step - clicking it for real (not "Suivant") ends the tour there
+  // instead of advancing, so the user's real action (e.g. the add-position
+  // dialog opening) isn't fighting the tour's own overlay/popover for
+  // attention. See OnboardingProvider's onHighlighted wiring.
+  interactive?: boolean
   title: string
   description: string
 }
@@ -22,9 +28,10 @@ export const TOUR_STEPS: TourStep[] = [
   {
     route: "/",
     target: '[data-tour="add-position"]',
+    interactive: true,
     title: "Ajoute tes positions",
     description:
-      "Commence par ajouter les actifs que tu possèdes - crypto, actions, or ou ETF - avec la plateforme sur laquelle ils se trouvent.",
+      "Commence par ajouter les actifs que tu possèdes - crypto, actions, or ou ETF - avec la plateforme sur laquelle ils se trouvent. Clique sur le bouton pour l'essayer tout de suite, ou sur « Suivant » pour continuer la visite.",
   },
   {
     route: "/market",
