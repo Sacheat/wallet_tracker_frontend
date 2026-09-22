@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as alertsApi from "@/features/alerts/api"
+import { toApiError } from "@/lib/http-client"
 
 export const alertsKeys = {
   all: ["price-alerts"] as const,
@@ -33,6 +34,21 @@ export function useDeleteAlert() {
     mutationFn: alertsApi.deleteAlert,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: alertsKeys.all }),
   })
+}
+
+/**
+ * POST/PATCH /api/price-alerts convert a non-USD threshold to USD server
+ * side at save time - if the FX source is down for a non-USD account, the
+ * backend 503s specifically on these two endpoints (added 2026-09-22, see
+ * api_reference memory). USD accounts never hit this. Surfaces a friendly
+ * retry message instead of the generic error text.
+ */
+export function getAlertErrorMessage(error: unknown): string {
+  const apiError = toApiError(error)
+  if (apiError.status === 503) {
+    return "Le taux de change n'est pas disponible pour le moment — réessaie dans quelques instants."
+  }
+  return apiError.message
 }
 
 export function useNotificationSettings() {

@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { useUpdateAlert } from "@/features/alerts/hooks"
+import { getAlertErrorMessage, useUpdateAlert } from "@/features/alerts/hooks"
 import {
   editAlertSchema,
   type EditAlertFormInput,
@@ -36,6 +36,7 @@ import {
 } from "@/features/alerts/schemas"
 import { ALERT_WINDOW_LABELS } from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
+import { useCurrency } from "@/providers/CurrencyProvider"
 import type { PriceAlert } from "@/types/api"
 
 export function EditAlertDialog({
@@ -46,6 +47,7 @@ export function EditAlertDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const updateAlert = useUpdateAlert()
+  const { currency, convert } = useCurrency()
 
   const form = useForm<EditAlertFormInput, unknown, EditAlertFormValues>({
     resolver: zodResolver(editAlertSchema),
@@ -54,12 +56,19 @@ export function EditAlertDialog({
 
   useEffect(() => {
     if (!alert) return
+    // alert.threshold always comes back in USD from the API, as a decimal
+    // string (Number() it) - convert it to the account's currency so the
+    // field matches what the user will type (undefined while rates are
+    // still loading for a non-USD account; the effect re-runs once they
+    // land, since `convert`'s identity changes then).
     form.reset({
-      threshold: alert.threshold ?? undefined,
-      percent_threshold: alert.percent_threshold ?? undefined,
+      threshold:
+        alert.threshold !== null ? (convert(Number(alert.threshold)) ?? undefined) : undefined,
+      percent_threshold:
+        alert.percent_threshold !== null ? Number(alert.percent_threshold) : undefined,
       window: alert.window ?? undefined,
     })
-  }, [alert, form])
+  }, [alert, form, convert])
 
   async function onSubmit(values: EditAlertFormValues) {
     if (!alert) return
@@ -68,7 +77,7 @@ export function EditAlertDialog({
       toast.success("Alerte mise à jour")
       onOpenChange(false)
     } catch (error) {
-      form.setError("root", { message: toApiError(error).message })
+      form.setError("root", { message: getAlertErrorMessage(error) })
     }
   }
 
@@ -159,7 +168,7 @@ export function EditAlertDialog({
                 name="threshold"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Seuil ($)</FormLabel>
+                    <FormLabel>Seuil ({currency})</FormLabel>
                     <FormControl>
                       <Input
                         type="number"

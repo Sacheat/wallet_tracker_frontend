@@ -32,23 +32,29 @@ import { CreateAlertDialog } from "@/features/alerts/CreateAlertDialog"
 import { EditAlertDialog } from "@/features/alerts/EditAlertDialog"
 import { useAlerts, useDeleteAlert } from "@/features/alerts/hooks"
 import { NotificationSettingsCard } from "@/features/alerts/NotificationSettingsCard"
-import { ALERT_TYPE_LABELS, ALERT_WINDOW_LABELS, formatUsd } from "@/lib/format"
+import { ALERT_TYPE_LABELS, ALERT_WINDOW_LABELS } from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
+import { useCurrency } from "@/providers/CurrencyProvider"
 import type { PriceAlert } from "@/types/api"
 
-function alertSummary(alert: PriceAlert) {
+// alert.threshold always comes back in USD from the API - `format` (from
+// useCurrency) converts it to the account's currency, the same round-trip
+// the backend's own docs suggest for displaying it back.
+function alertSummary(alert: PriceAlert, format: (amountUsd: number) => string) {
   const label = ALERT_TYPE_LABELS[alert.type]
   if (alert.type === "percent_change") {
-    return `${alert.asset?.name ?? "Actif"} · ${label} ${alert.percent_threshold}% (${ALERT_WINDOW_LABELS[alert.window!]})`
+    return `${alert.asset?.name ?? "Actif"} · ${label} ${Number(alert.percent_threshold)}% (${ALERT_WINDOW_LABELS[alert.window!]})`
   }
+  const thresholdUsd = Number(alert.threshold ?? 0)
   if (alert.type === "portfolio_total_above" || alert.type === "portfolio_total_below") {
-    return `${label} ${formatUsd(alert.threshold ?? 0)}`
+    return `${label} ${format(thresholdUsd)}`
   }
-  return `${alert.asset?.name ?? "Actif"} · ${label} ${formatUsd(alert.threshold ?? 0)}`
+  return `${alert.asset?.name ?? "Actif"} · ${label} ${format(thresholdUsd)}`
 }
 
 export function AlertsPage() {
   const { data: alerts = [], isLoading } = useAlerts()
+  const { format } = useCurrency()
   const deleteAlert = useDeleteAlert()
   const [editingAlert, setEditingAlert] = useState<PriceAlert | null>(null)
   const [deletingAlert, setDeletingAlert] = useState<PriceAlert | null>(null)
@@ -100,7 +106,7 @@ export function AlertsPage() {
             <TableBody>
               {alerts.map((alert) => (
                 <TableRow key={alert.id}>
-                  <TableCell className="font-medium">{alertSummary(alert)}</TableCell>
+                  <TableCell className="font-medium">{alertSummary(alert, format)}</TableCell>
                   <TableCell>
                     <Badge variant={alert.is_active ? "default" : "secondary"}>
                       {alert.is_active ? "Active" : "Inactive"}

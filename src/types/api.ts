@@ -124,8 +124,12 @@ export interface PriceAlert {
   type: PriceAlertType
   asset_id: number | null
   asset?: Asset
-  threshold: number | null
-  percent_threshold: number | null
+  // Decimal-cast columns, serialized as strings by Laravel (same convention
+  // as PricePoint.price_usd) - confirmed live 2026-09-22 when the backend
+  // started returning converted thresholds like "114.81056257" for non-USD
+  // accounts. Parse with Number() at the point of use.
+  threshold: string | null
+  percent_threshold: string | null
   window: AlertWindow | null
   user_id: number
   is_active: boolean

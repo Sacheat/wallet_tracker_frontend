@@ -29,14 +29,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAssets } from "@/features/assets/hooks"
-import { useCreateAlert } from "@/features/alerts/hooks"
+import { getAlertErrorMessage, useCreateAlert } from "@/features/alerts/hooks"
 import {
   createAlertSchema,
   type CreateAlertFormInput,
   type CreateAlertFormValues,
 } from "@/features/alerts/schemas"
 import { ALERT_TYPE_LABELS, ALERT_WINDOW_LABELS, ASSET_TYPE_LABELS } from "@/lib/format"
-import { toApiError } from "@/lib/http-client"
+import { useCurrency } from "@/providers/CurrencyProvider"
 import type { CreateAlertPayload } from "@/features/alerts/api"
 
 const NEEDS_ASSET = new Set(["price_above", "price_below", "percent_change"])
@@ -45,6 +45,7 @@ export function CreateAlertDialog() {
   const [open, setOpen] = useState(false)
   const { data: assets = [] } = useAssets()
   const createAlert = useCreateAlert()
+  const { currency } = useCurrency()
 
   const form = useForm<CreateAlertFormInput, unknown, CreateAlertFormValues>({
     resolver: zodResolver(createAlertSchema),
@@ -69,8 +70,7 @@ export function CreateAlertDialog() {
       form.reset({ type: "price_above" })
       setOpen(false)
     } catch (error) {
-      const apiError = toApiError(error)
-      form.setError("root", { message: apiError.message })
+      form.setError("root", { message: getAlertErrorMessage(error) })
     }
   }
 
@@ -209,7 +209,9 @@ export function CreateAlertDialog() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {type.startsWith("portfolio") ? "Valeur totale ($)" : "Prix ($)"}
+                      {type.startsWith("portfolio")
+                        ? `Valeur totale (${currency})`
+                        : `Prix (${currency})`}
                     </FormLabel>
                     <FormControl>
                       <Input
