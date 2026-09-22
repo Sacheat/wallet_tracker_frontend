@@ -23,7 +23,7 @@ export function StatTile({
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs font-medium">{label}</span>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-semibold tracking-tight">{value}</span>
+            <span className="text-2xl font-bold tracking-tight tabular-nums">{value}</span>
             {delta}
           </div>
           {secondaryValue && (

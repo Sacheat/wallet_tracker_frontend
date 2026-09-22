@@ -54,6 +54,7 @@ import {
 import { ASSET_TYPE_LABELS, formatQuantity, formatUsd } from "@/lib/format"
 import { downloadCsv } from "@/lib/csv"
 import { toApiError } from "@/lib/http-client"
+import { useAnimatedNumber } from "@/lib/use-animated-number"
 import { cn } from "@/lib/utils"
 import { useCurrency } from "@/providers/CurrencyProvider"
 
@@ -112,6 +113,7 @@ export function PortfolioPage() {
     isValuationUnavailable,
   } = usePortfolioTable()
   const { currency, format } = useCurrency()
+  const animatedTotalValueUsd = useAnimatedNumber(totalValueUsd)
   const [editingRow, setEditingRow] = useState<PortfolioTableRow | null>(null)
   const [deletingRow, setDeletingRow] = useState<PortfolioTableRow | null>(null)
   const [search, setSearch] = useState("")
@@ -286,13 +288,14 @@ export function PortfolioPage() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatTile
+          className="stat-hero"
           label="Valeur totale"
-          value={totalValueUsd !== null ? format(totalValueUsd) : "—"}
+          value={animatedTotalValueUsd !== null ? format(animatedTotalValueUsd) : "—"}
           delta={totalChangePercent && <GainLossValue value={totalChangePercent["24h"]} />}
           secondaryValue={
             <div className="flex flex-col gap-1">
-              {currency !== "USD" && totalValueUsd !== null && (
-                <span>{formatUsd(totalValueUsd)}</span>
+              {currency !== "USD" && animatedTotalValueUsd !== null && (
+                <span>{formatUsd(animatedTotalValueUsd)}</span>
               )}
               {totalChangePercent && (
                 <div className="flex gap-3 text-xs">

@@ -42,6 +42,7 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
+    --color-accent-warm: var(--accent-warm);
     --radius-sm: calc(var(--radius) * 0.6);
     --radius-md: calc(var(--radius) * 0.8);
     --radius-lg: var(--radius);
@@ -52,78 +53,82 @@
 }
 
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --background: #F5F6F8;
+    --foreground: #12141A;
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: #12141A;
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: #2a78d6;
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --popover-foreground: #12141A;
+    --primary: #6C5CE7;
+    --primary-foreground: oklch(1 0 0);
+    --secondary: #EEF0F4;
+    --secondary-foreground: #12141A;
+    --muted: #EEF0F4;
+    --muted-foreground: #6B7280;
+    --accent: #F0EEFC;
+    --accent-foreground: #12141A;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: #2a78d6;
+    --border: #E4E6EC;
+    --input: #E4E6EC;
+    --ring: #6C5CE7;
     --gain: #006300;
     --loss: #d03b3b;
     --warning: #fab219;
+    /* Used only for the hero stat's gradient wash (see .stat-hero) - not a
+       general-purpose token, deliberately spent in one place. */
+    --accent-warm: #FF8B5C;
     --chart-1: #2a78d6;
     --chart-2: #eb6834;
     --chart-3: #1baf7a;
     --chart-4: #eda100;
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: #2a78d6;
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: #2a78d6;
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: #12141A;
+    --sidebar-primary: #6C5CE7;
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: #EEF0F4;
+    --sidebar-accent-foreground: #12141A;
+    --sidebar-border: #E4E6EC;
+    --sidebar-ring: #6C5CE7;
 }
 
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: #3987e5;
-    --primary-foreground: oklch(0.145 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
+    --background: #0D0F14;
+    --foreground: #E8EAF0;
+    --card: #14161D;
+    --card-foreground: #E8EAF0;
+    --popover: #14161D;
+    --popover-foreground: #E8EAF0;
+    --primary: #8C7EFF;
+    --primary-foreground: #0D0F14;
+    --secondary: #1C1F29;
+    --secondary-foreground: #E8EAF0;
+    --muted: #1C1F29;
+    --muted-foreground: #8B93A7;
+    --accent: #221F33;
+    --accent-foreground: #E8EAF0;
     --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
-    --ring: #3987e5;
+    --ring: #8C7EFF;
     --gain: #0ca30c;
     --loss: #e66767;
     --warning: #fab219;
+    --accent-warm: #FF9B72;
     --chart-1: #3987e5;
     --chart-2: #d95926;
     --chart-3: #199e70;
     --chart-4: #c98500;
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: #3987e5;
-    --sidebar-primary-foreground: oklch(0.145 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar: #14161D;
+    --sidebar-foreground: #E8EAF0;
+    --sidebar-primary: #8C7EFF;
+    --sidebar-primary-foreground: #0D0F14;
+    --sidebar-accent: #1C1F29;
+    --sidebar-accent-foreground: #E8EAF0;
     --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: #3987e5;
+    --sidebar-ring: #8C7EFF;
 }
 
 @layer base {
@@ -136,4 +141,39 @@
   html {
     @apply font-sans;
     }
+}
+
+@layer components {
+  /*
+   * The single gradient moment of the "Signal" design pass - reserved for
+   * the portfolio's hero stat tile, nowhere else. Two soft radial washes
+   * (primary + accent-warm) sit behind the card content via pseudo-
+   * elements, so no extra markup is needed and the card's own
+   * `overflow-hidden` clips them cleanly to its rounded corners.
+   */
+  .stat-hero {
+    position: relative;
+    isolation: isolate;
+  }
+  .stat-hero::before,
+  .stat-hero::after {
+    content: "";
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 9999px;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .stat-hero::before {
+    inset: -45% -15% auto auto;
+    width: 65%;
+    background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+    opacity: 0.16;
+  }
+  .stat-hero::after {
+    inset: auto auto -55% -12%;
+    width: 60%;
+    background: radial-gradient(circle, var(--accent-warm) 0%, transparent 70%);
+    opacity: 0.14;
+  }
 }
