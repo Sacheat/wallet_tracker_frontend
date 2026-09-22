@@ -3,6 +3,7 @@ import { useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { useCreatePlatform, useUpdatePlatform } from "@/features/platforms/hooks"
 import { platformFormSchema, type PlatformFormValues } from "@/features/platforms/schemas"
 import { toApiError } from "@/lib/http-client"
@@ -44,6 +46,9 @@ export function PlatformFormDialog({
     resolver: zodResolver(platformFormSchema),
     defaultValues: EMPTY_VALUES,
   })
+
+  const previewName = form.watch("name")
+  const previewLogoUrl = form.watch("logo_url")
 
   useEffect(() => {
     if (!open) return
@@ -77,6 +82,14 @@ export function PlatformFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifier la plateforme" : "Ajouter une plateforme"}</DialogTitle>
         </DialogHeader>
+        <Card size="sm" className="bg-muted/40">
+          <CardContent className="flex items-center gap-3">
+            <EntityAvatar src={previewLogoUrl} label={previewName || "?"} />
+            <span className="truncate text-sm font-medium">
+              {previewName || "Nom de la plateforme"}
+            </span>
+          </CardContent>
+        </Card>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             <FormField

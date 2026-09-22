@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -29,11 +30,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { useAssetSearch, useCreateAsset, useUpdateAsset } from "@/features/assets/hooks"
 import { assetFormSchema, type AssetFormValues } from "@/features/assets/schemas"
-import { ASSET_TYPE_LABELS } from "@/lib/format"
+import {
+  ASSET_TYPE_CHART_CLASS,
+  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_LABELS,
+} from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
+import { cn } from "@/lib/utils"
 import type { Asset, AssetSearchResult } from "@/types/api"
 
 const EMPTY_VALUES: AssetFormValues = {
@@ -76,6 +83,14 @@ export function AssetFormDialog({
     resolver: zodResolver(assetFormSchema),
     defaultValues: EMPTY_VALUES,
   })
+
+  // Live preview card at the top mirrors this exact row shape (avatar,
+  // name, symbol, type badge) as it'll appear in the catalog table -
+  // watch() re-renders on every keystroke, which is fine at this scale.
+  const previewName = form.watch("name")
+  const previewSymbol = form.watch("symbol")
+  const previewType = form.watch("type")
+  const previewLogoUrl = form.watch("logo_url")
 
   useEffect(() => {
     if (!open) return
@@ -129,6 +144,29 @@ export function AssetFormDialog({
         <DialogHeader>
           <DialogTitle>{isEdit ? "Modifier l'actif" : "Ajouter un actif"}</DialogTitle>
         </DialogHeader>
+        <Card size="sm" className="bg-muted/40">
+          <CardContent className="flex items-center gap-3">
+            <EntityAvatar
+              src={previewLogoUrl}
+              label={previewSymbol || previewName || "?"}
+              toneClassName={cn(
+                `${ASSET_TYPE_CHART_CLASS[previewType]}/15`,
+                ASSET_TYPE_CHART_TEXT_CLASS[previewType],
+              )}
+            />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate text-sm font-medium">
+                {previewName || "Nom de l'actif"}
+              </span>
+              <span className="text-muted-foreground truncate text-xs">
+                {previewSymbol || "Symbole"}
+              </span>
+            </div>
+            <Badge variant="secondary" className="shrink-0">
+              {ASSET_TYPE_LABELS[previewType]}
+            </Badge>
+          </CardContent>
+        </Card>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             {!isEdit && (
@@ -147,7 +185,7 @@ export function AssetFormDialog({
                   />
                 </div>
                 {showResults && (
-                  <div className="bg-popover absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border shadow-md">
+                  <div className="bg-popover border-border absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border p-1 shadow-lg">
                     {isSearching ? (
                       <p className="text-muted-foreground p-3 text-sm">Recherche...</p>
                     ) : searchResults.length === 0 ? (
@@ -166,9 +204,18 @@ export function AssetFormDialog({
                             e.preventDefault()
                             handleSelectResult(result)
                           }}
-                          className="hover:bg-muted flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm"
+                          className="hover:bg-accent flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors"
                         >
-                          <span className="flex min-w-0 items-center gap-2">
+                          <EntityAvatar
+                            src={null}
+                            label={result.symbol}
+                            toneClassName={cn(
+                              `${ASSET_TYPE_CHART_CLASS[result.type]}/15`,
+                              ASSET_TYPE_CHART_TEXT_CLASS[result.type],
+                            )}
+                            className="size-7 text-[0.65rem]"
+                          />
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
                             <span className="truncate font-medium">{result.name}</span>
                             <span className="text-muted-foreground shrink-0">
                               {result.symbol}

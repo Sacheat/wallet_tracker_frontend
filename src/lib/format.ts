@@ -63,3 +63,13 @@ export const ASSET_TYPE_CHART_CLASS: Record<AssetType, string> = {
   gold: "bg-chart-3",
   etf: "bg-chart-4",
 }
+
+// Text-color counterpart of the above, for monogram avatars (EntityAvatar)
+// and anywhere else the categorical palette needs to color text rather
+// than a fill - same fixed order/values, just the `text-` utility.
+export const ASSET_TYPE_CHART_TEXT_CLASS: Record<AssetType, string> = {
+  crypto: "text-chart-1",
+  stock: "text-chart-2",
+  gold: "text-chart-3",
+  etf: "text-chart-4",
+}
