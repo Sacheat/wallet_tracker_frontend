@@ -3,13 +3,19 @@ import { Link, useParams } from "react-router-dom"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { GainLossValue } from "@/components/GainLossValue"
 import { PriceHistoryChart } from "@/components/PriceHistoryChart"
 import { StatTile } from "@/components/StatTile"
 import { useAsset, useAssetDetails, useAssetNews } from "@/features/assets/hooks"
-import { ASSET_TYPE_LABELS } from "@/lib/format"
+import {
+  ASSET_TYPE_CHART_CLASS,
+  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_LABELS,
+} from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
 import { useAnimatedNumber } from "@/lib/use-animated-number"
+import { cn } from "@/lib/utils"
 import { useCurrency } from "@/providers/CurrencyProvider"
 
 export function AssetDetailPage() {
@@ -46,11 +52,15 @@ export function AssetDetailPage() {
       </Link>
 
       <div className="flex flex-wrap items-center gap-3">
-        {asset.logo_url ? (
-          <img src={asset.logo_url} alt="" className="size-9 rounded-full" />
-        ) : (
-          <div className="bg-muted size-9 rounded-full" />
-        )}
+        <EntityAvatar
+          src={asset.logo_url}
+          label={asset.symbol}
+          toneClassName={cn(
+            `${ASSET_TYPE_CHART_CLASS[asset.type]}/15`,
+            ASSET_TYPE_CHART_TEXT_CLASS[asset.type],
+          )}
+          className="size-9 text-sm"
+        />
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight">{asset.name}</h1>

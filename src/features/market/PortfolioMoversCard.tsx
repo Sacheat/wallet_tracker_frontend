@@ -2,8 +2,11 @@ import { TrendingUp } from "lucide-react"
 import { Link } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { GainLossValue } from "@/components/GainLossValue"
 import { usePortfolioMovers, type PortfolioMover } from "@/features/market/hooks"
+import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_CHART_TEXT_CLASS } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 function MoverRow({ mover }: { mover: PortfolioMover }) {
   return (
@@ -12,11 +15,15 @@ function MoverRow({ mover }: { mover: PortfolioMover }) {
       className="hover:bg-accent/50 -mx-2 flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors"
     >
       <span className="flex items-center gap-2">
-        {mover.asset.logo_url ? (
-          <img src={mover.asset.logo_url} alt="" className="size-5 rounded-full" />
-        ) : (
-          <div className="bg-muted size-5 rounded-full" />
-        )}
+        <EntityAvatar
+          src={mover.asset.logo_url}
+          label={mover.asset.symbol}
+          toneClassName={cn(
+            `${ASSET_TYPE_CHART_CLASS[mover.asset.type]}/15`,
+            ASSET_TYPE_CHART_TEXT_CLASS[mover.asset.type],
+          )}
+          className="size-5 text-[0.6rem]"
+        />
         <span className="font-medium">{mover.asset.name}</span>
         <span className="text-muted-foreground">{mover.asset.symbol}</span>
       </span>

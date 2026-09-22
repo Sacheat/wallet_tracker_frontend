@@ -6,16 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AvatarCropDialog } from "@/features/account/AvatarCropDialog"
 import { useDeleteAvatar } from "@/features/account/hooks"
 import { toApiError } from "@/lib/http-client"
+import { getInitials } from "@/lib/initials"
 import type { User } from "@/types/api"
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
-}
 
 export function AvatarSection({ user }: { user: User }) {
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -38,7 +30,7 @@ export function AvatarSection({ user }: { user: User }) {
       <CardContent className="flex items-center gap-4">
         <Avatar size="lg">
           <AvatarImage src={user.avatar_url ?? undefined} alt="" />
-          <AvatarFallback>{initials(user.name) || <span>?</span>}</AvatarFallback>
+          <AvatarFallback>{getInitials(user.name) || <span>?</span>}</AvatarFallback>
         </Avatar>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={() => setDialogOpen(true)}>

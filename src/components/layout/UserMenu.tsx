@@ -12,16 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getInitials } from "@/lib/initials"
 import { useAuth } from "@/providers/AuthProvider"
-
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase()
-}
 
 export function UserMenu() {
   const { user, logout } = useAuth()
@@ -46,7 +38,7 @@ export function UserMenu() {
             <Avatar className="size-6">
               <AvatarImage src={user.avatar_url ?? undefined} alt="" />
               <AvatarFallback className="text-xs">
-                {initials(user.name) || <UserIcon className="size-3.5" />}
+                {getInitials(user.name) || <UserIcon className="size-3.5" />}
               </AvatarFallback>
             </Avatar>
             <span className="max-w-32 truncate text-sm">{user.name}</span>

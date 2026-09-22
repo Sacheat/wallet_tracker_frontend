@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { PlatformFormDialog } from "@/features/platforms/PlatformFormDialog"
 import { useDeletePlatform, usePlatforms } from "@/features/platforms/hooks"
 import { toApiError } from "@/lib/http-client"
@@ -91,15 +92,11 @@ export function PlatformsTab() {
                 <TableRow key={platform.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {platform.logo_url ? (
-                        <img
-                          src={platform.logo_url}
-                          alt=""
-                          className="size-5 rounded-full"
-                        />
-                      ) : (
-                        <div className="bg-muted size-5 rounded-full" />
-                      )}
+                      <EntityAvatar
+                        src={platform.logo_url}
+                        label={platform.name}
+                        className="size-5 text-[0.6rem]"
+                      />
                       {platform.name}
                     </div>
                   </TableCell>

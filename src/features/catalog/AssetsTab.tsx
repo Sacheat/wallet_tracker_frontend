@@ -28,10 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { AssetFormDialog } from "@/features/assets/AssetFormDialog"
 import { useAssets, useDeleteAsset } from "@/features/assets/hooks"
-import { ASSET_TYPE_LABELS } from "@/lib/format"
+import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_CHART_TEXT_CLASS, ASSET_TYPE_LABELS } from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
+import { cn } from "@/lib/utils"
 import type { Asset } from "@/types/api"
 
 type FormTarget = "closed" | "create" | Asset
@@ -97,11 +99,15 @@ export function AssetsTab() {
                 <TableRow key={asset.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {asset.logo_url ? (
-                        <img src={asset.logo_url} alt="" className="size-5 rounded-full" />
-                      ) : (
-                        <div className="bg-muted size-5 rounded-full" />
-                      )}
+                      <EntityAvatar
+                        src={asset.logo_url}
+                        label={asset.symbol}
+                        toneClassName={cn(
+                          `${ASSET_TYPE_CHART_CLASS[asset.type]}/15`,
+                          ASSET_TYPE_CHART_TEXT_CLASS[asset.type],
+                        )}
+                        className="size-5 text-[0.6rem]"
+                      />
                       {asset.name}
                     </div>
                   </TableCell>

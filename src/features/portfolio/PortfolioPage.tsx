@@ -41,6 +41,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { EntityAvatar } from "@/components/EntityAvatar"
 import { GainLossValue } from "@/components/GainLossValue"
 import { MiniSparkline } from "@/components/MiniSparkline"
 import { StatTile } from "@/components/StatTile"
@@ -51,7 +52,13 @@ import {
   usePortfolioTable,
   type PortfolioTableRow,
 } from "@/features/portfolio/hooks"
-import { ASSET_TYPE_LABELS, formatQuantity, formatUsd } from "@/lib/format"
+import {
+  ASSET_TYPE_CHART_CLASS,
+  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_LABELS,
+  formatQuantity,
+  formatUsd,
+} from "@/lib/format"
 import { downloadCsv } from "@/lib/csv"
 import { toApiError } from "@/lib/http-client"
 import { useAnimatedNumber } from "@/lib/use-animated-number"
@@ -205,11 +212,15 @@ export function PortfolioPage() {
       >
         <TableCell className="font-medium">
           <div className="flex items-center gap-2">
-            {row.assetLogoUrl ? (
-              <img src={row.assetLogoUrl} alt="" className="size-5 rounded-full" />
-            ) : (
-              <div className="bg-muted size-5 rounded-full" />
-            )}
+            <EntityAvatar
+              src={row.assetLogoUrl}
+              label={row.assetSymbol}
+              toneClassName={cn(
+                `${ASSET_TYPE_CHART_CLASS[row.assetType]}/15`,
+                ASSET_TYPE_CHART_TEXT_CLASS[row.assetType],
+              )}
+              className="size-5 text-[0.6rem]"
+            />
             <span>{row.assetName}</span>
             <span className="text-muted-foreground">{row.assetSymbol}</span>
             {row.hasActiveAlert && (
