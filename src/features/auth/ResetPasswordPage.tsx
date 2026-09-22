@@ -23,6 +23,16 @@ import {
 import { toApiError } from "@/lib/http-client"
 import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
 
+// This form only has password/password_confirmation fields (the email
+// comes from the URL, not an input) - but verified live, an invalid or
+// expired token comes back as `errors.email`, not `errors.password`.
+// Blindly setError()-ing on whatever field name the backend sends would
+// silently attach to a field that has no <FormMessage> to render it.
+const FORM_FIELDS = new Set<keyof ResetPasswordFormValues>([
+  "password",
+  "password_confirmation",
+])
+
 export function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -49,10 +59,18 @@ export function ResetPasswordPage() {
           message: "Trop de tentatives. Patiente avant de réessayer.",
         })
       } else if (apiError.errors) {
+        let attachedToField = false
         for (const [field, messages] of Object.entries(apiError.errors)) {
-          form.setError(field as keyof ResetPasswordFormValues, {
-            message: messages[0],
-          })
+          if (FORM_FIELDS.has(field as keyof ResetPasswordFormValues)) {
+            form.setError(field as keyof ResetPasswordFormValues, {
+              message: messages[0],
+            })
+            attachedToField = true
+          }
+        }
+        if (!attachedToField) {
+          // e.g. an invalid/expired token, reported under `errors.email`.
+          form.setError("root", { message: apiError.message })
         }
       } else {
         form.setError("root", { message: apiError.message })

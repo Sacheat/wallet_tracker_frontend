@@ -1,5 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +21,7 @@ import {
   type PasswordChangeFormValues,
 } from "@/features/account/schemas"
 import { toApiError } from "@/lib/http-client"
+import { authQueryKey } from "@/providers/AuthProvider"
 
 const EMPTY_VALUES: PasswordChangeFormValues = {
   current_password: "",
@@ -28,6 +31,8 @@ const EMPTY_VALUES: PasswordChangeFormValues = {
 
 export function PasswordSection() {
   const updatePassword = useUpdatePassword()
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
 
   const form = useForm<PasswordChangeFormValues>({
     resolver: zodResolver(passwordChangeSchema),
@@ -37,8 +42,16 @@ export function PasswordSection() {
   async function onSubmit(values: PasswordChangeFormValues) {
     try {
       await updatePassword.mutateAsync(values)
-      toast.success("Mot de passe changé.")
-      form.reset(EMPTY_VALUES)
+      // Verified live (2026-09-22): Laravel invalidates the current
+      // session server-side as soon as the password hash changes (its
+      // AuthenticateSession guard compares the session's stored hash on
+      // every request). The very next /api/* call would otherwise 401
+      // with nothing handling it - treat this exactly like a logout
+      // instead of pretending the session survives.
+      queryClient.clear()
+      queryClient.setQueryData(authQueryKey, null)
+      toast.success("Mot de passe changé — reconnecte-toi.")
+      navigate("/login", { replace: true })
     } catch (error) {
       const apiError = toApiError(error)
       if (apiError.errors) {

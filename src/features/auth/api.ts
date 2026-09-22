@@ -14,14 +14,29 @@ export interface RegisterPayload {
   password_confirmation: string
 }
 
+// Verified live (2026-09-22): POST /register's own response omits
+// email_verified_at entirely (and a few other fields GET /user has) -
+// caching it directly left VerifyEmailScreen's `=== null` check comparing
+// against `undefined`, so a fresh signup never saw the gate. POST /login's
+// response happens to include everything correctly, but both go through
+// the same canonical fetch anyway so a similar drift on that endpoint
+// can't silently reintroduce the same bug.
+async function fetchCanonicalUser(): Promise<User> {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error("La session n'a pas pu être confirmée.")
+  }
+  return user
+}
+
 export async function login(payload: LoginPayload) {
-  const { data } = await httpClient.post<User>("/login", payload)
-  return data
+  await httpClient.post("/login", payload)
+  return fetchCanonicalUser()
 }
 
 export async function register(payload: RegisterPayload) {
-  const { data } = await httpClient.post<User>("/register", payload)
-  return data
+  await httpClient.post("/register", payload)
+  return fetchCanonicalUser()
 }
 
 export async function logout() {
