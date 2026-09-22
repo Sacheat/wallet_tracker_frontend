@@ -18,6 +18,16 @@ export interface Asset {
   logo_url: string | null
 }
 
+// GET /api/assets/search result item - crypto (CoinGecko) + stock/etf
+// (Yahoo Finance) only, never gold (single ticker, no search index for it
+// per the API reference - create it directly with external_id "GC=F").
+export interface AssetSearchResult {
+  external_id: string
+  name: string
+  symbol: string
+  type: AssetType
+}
+
 export interface ChangePercent {
   "1h": number | null
   "24h": number | null

@@ -1,5 +1,5 @@
 import { httpClient } from "@/lib/http-client"
-import type { Asset, AssetDetails, AssetType, NewsItem } from "@/types/api"
+import type { Asset, AssetDetails, AssetSearchResult, AssetType, NewsItem } from "@/types/api"
 
 export interface AssetPayload {
   name: string
@@ -17,6 +17,17 @@ export async function getAssets() {
 export async function getAsset(id: number) {
   const { data } = await httpClient.get<Asset>(`/api/assets/${id}`)
   return data
+}
+
+// Requires 2-100 chars (backend-validated) - callers should debounce and
+// only enable this below that length. Never returns gold (see
+// AssetSearchResult).
+export async function searchAssets(query: string) {
+  const { data } = await httpClient.get<{ data: AssetSearchResult[] }>(
+    "/api/assets/search",
+    { params: { q: query } },
+  )
+  return data.data
 }
 
 export async function getAssetDetails(id: number) {

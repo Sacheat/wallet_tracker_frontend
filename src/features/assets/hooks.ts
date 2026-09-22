@@ -32,6 +32,17 @@ export function useAssetDetails(id: number) {
   })
 }
 
+export function useAssetSearch(query: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["assets", "search", query] as const,
+    queryFn: () => assetsApi.searchAssets(query),
+    enabled,
+    // The backend itself caches this for 5 min - no point refetching
+    // sooner if the same query comes up again in one session.
+    staleTime: 5 * 60_000,
+  })
+}
+
 export function useAssetNews(id: number) {
   return useQuery({
     queryKey: assetsKeys.news(id),
