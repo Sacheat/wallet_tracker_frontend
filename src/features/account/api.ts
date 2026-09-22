@@ -24,11 +24,22 @@ export async function updatePassword(payload: UpdatePasswordPayload) {
   await httpClient.patch("/user/password", payload)
 }
 
-// Separate from updateProfile: `currency` is optional/standalone on
-// PATCH /user (no current_password needed, unlike email), so it gets its
-// own mutation rather than being bundled into the name/email form.
-export async function updateCurrency(currency: CurrencyCode) {
-  const { data } = await httpClient.patch<User>("/user", { currency })
+// Separate from updateProfile: `currency` is documented as optional/
+// standalone on PATCH /user, but verified live (2026-09-22) that the
+// backend actually requires `name`+`email` on every PATCH /user call
+// regardless of which fields are present (422 "The name field is
+// required."/"The email field is required." when currency is sent alone) -
+// a real backend validation bug (name/email should be `sometimes`, not
+// unconditionally `required`), flagged for the backend session but worked
+// around here by resending the user's current, unchanged name/email
+// alongside currency. This does NOT trigger the current_password
+// requirement, which is genuinely conditional on email actually changing.
+export async function updateCurrency(payload: {
+  currency: CurrencyCode
+  name: string
+  email: string
+}) {
+  const { data } = await httpClient.patch<User>("/user", payload)
   return data
 }
 

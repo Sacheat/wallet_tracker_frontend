@@ -44,11 +44,15 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
       convert,
       format: (amountUsd: number) => formatMoney(convert(amountUsd), currency),
       setCurrency: async (next) => {
-        await updateCurrency.mutateAsync(next)
+        if (!user) return
+        // Resends the current, unchanged name/email alongside currency -
+        // see the comment on features/account/api.ts's updateCurrency for
+        // why (a backend validation bug, not a frontend design choice).
+        await updateCurrency.mutateAsync({ currency: next, name: user.name, email: user.email })
       },
       isUpdating: updateCurrency.isPending,
     }
-  }, [currency, rates, isRatesLoading, ratesUnavailable, updateCurrency])
+  }, [currency, rates, isRatesLoading, ratesUnavailable, updateCurrency, user])
 
   return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>
 }
