@@ -17,6 +17,7 @@ import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
 import { queryClient } from "@/lib/query-client"
 import { authQueryKey, AuthProvider } from "@/providers/AuthProvider"
 import { CurrencyProvider } from "@/providers/CurrencyProvider"
+import { OnboardingProvider } from "@/providers/OnboardingProvider"
 import { ThemeProvider } from "@/providers/ThemeProvider"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
@@ -83,8 +84,10 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <CurrencyProvider>
-            <AppRoutes />
-            <Toaster />
+            <OnboardingProvider>
+              <AppRoutes />
+              <Toaster />
+            </OnboardingProvider>
           </CurrencyProvider>
         </AuthProvider>
       </QueryClientProvider>

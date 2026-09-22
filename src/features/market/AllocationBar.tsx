@@ -12,7 +12,7 @@ export function AllocationBar() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card data-tour="market-allocation">
         <CardHeader>
           <CardTitle className="text-sm">Répartition par type d'actif</CardTitle>
         </CardHeader>
@@ -28,7 +28,7 @@ export function AllocationBar() {
 
   if (rows.length === 0 || total <= 0) {
     return (
-      <Card>
+      <Card data-tour="market-allocation">
         <CardHeader>
           <CardTitle className="text-sm">Répartition par type d'actif</CardTitle>
         </CardHeader>
@@ -55,7 +55,7 @@ export function AllocationBar() {
   const legend = [...segments].sort((a, b) => b.value - a.value)
 
   return (
-    <Card>
+    <Card data-tour="market-allocation">
       <CardHeader>
         <CardTitle className="text-sm">Répartition par type d'actif</CardTitle>
       </CardHeader>

@@ -1,0 +1,93 @@
+/*
+ * driver.js ships hardcoded light-only colors (white popover, black text,
+ * #fff arrow). This retheme uses the app's existing CSS variables
+ * (src/index.css) so the tour matches both themes automatically - nothing
+ * here needs to know which theme is active.
+ *
+ * Specificity note: every selector below is deliberately two classes deep
+ * (".wt-tour-popover .driver-popover-x" or ".driver-popover.wt-tour-popover")
+ * so it wins over driver.css's own single-class rules regardless of CSS
+ * import order, without needing !important.
+ */
+
+.driver-popover.wt-tour-popover {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 0.18);
+  max-width: 320px;
+  padding: 16px;
+}
+
+.wt-tour-popover .driver-popover-title {
+  color: var(--popover-foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.wt-tour-popover .driver-popover-description {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.wt-tour-popover .driver-popover-close-btn {
+  color: var(--muted-foreground);
+}
+.wt-tour-popover .driver-popover-close-btn:hover,
+.wt-tour-popover .driver-popover-close-btn:focus {
+  color: var(--popover-foreground);
+}
+
+.wt-tour-popover .driver-popover-progress-text {
+  color: var(--muted-foreground);
+}
+
+.wt-tour-popover .driver-popover-footer-btn {
+  background-color: var(--background);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px 10px;
+  font-size: 0.8rem;
+}
+.wt-tour-popover .driver-popover-footer-btn:hover,
+.wt-tour-popover .driver-popover-footer-btn:focus {
+  background-color: var(--accent);
+}
+
+.wt-tour-popover .driver-popover-next-btn,
+.wt-tour-popover .driver-popover-done-btn {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.wt-tour-popover .driver-popover-next-btn:hover,
+.wt-tour-popover .driver-popover-done-btn:hover {
+  background-color: var(--primary);
+  opacity: 0.9;
+}
+
+.wt-tour-popover .driver-popover-arrow {
+  border: 5px solid var(--popover);
+}
+.wt-tour-popover .driver-popover-arrow-side-left {
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-right-color: transparent;
+}
+.wt-tour-popover .driver-popover-arrow-side-right {
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+.wt-tour-popover .driver-popover-arrow-side-top {
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}
+.wt-tour-popover .driver-popover-arrow-side-bottom {
+  border-top-color: transparent;
+  border-left-color: transparent;
+  border-right-color: transparent;
+}

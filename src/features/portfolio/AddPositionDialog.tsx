@@ -81,7 +81,13 @@ export function AddPositionDialog() {
         if (!next) form.reset()
       }}
     >
-      <DialogTrigger render={<Button><Plus /> Ajouter une position</Button>} />
+      <DialogTrigger
+        render={
+          <Button data-tour="add-position">
+            <Plus /> Ajouter une position
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Ajouter une position</DialogTitle>

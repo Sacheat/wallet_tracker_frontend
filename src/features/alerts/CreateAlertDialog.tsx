@@ -91,7 +91,13 @@ export function CreateAlertDialog() {
         }
       }}
     >
-      <DialogTrigger render={<Button><Plus /> Créer une alerte</Button>} />
+      <DialogTrigger
+        render={
+          <Button data-tour="create-alert">
+            <Plus /> Créer une alerte
+          </Button>
+        }
+      />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Créer une alerte</DialogTitle>

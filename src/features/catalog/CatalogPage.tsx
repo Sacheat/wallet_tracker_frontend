@@ -8,7 +8,7 @@ export function CatalogPage() {
       <h1 className="text-xl font-semibold tracking-tight">Catalogue</h1>
 
       <Tabs defaultValue="assets">
-        <TabsList>
+        <TabsList data-tour="catalog-tabs">
           <TabsTrigger value="assets">Actifs</TabsTrigger>
           <TabsTrigger value="platforms">Plateformes</TabsTrigger>
         </TabsList>

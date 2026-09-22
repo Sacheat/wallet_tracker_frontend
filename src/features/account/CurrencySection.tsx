@@ -37,7 +37,11 @@ export function CurrencySection() {
           utilisée pour leur déclenchement.
         </p>
         <Select value={currency} onValueChange={handleChange} items={CURRENCY_LABELS}>
-          <SelectTrigger className="w-fit min-w-52" disabled={isUpdating}>
+          <SelectTrigger
+            data-tour="currency-selector"
+            className="w-fit min-w-52"
+            disabled={isUpdating}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
