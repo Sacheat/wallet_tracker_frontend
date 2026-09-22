@@ -29,6 +29,16 @@ export function useUpdateCurrency() {
   })
 }
 
+export function useCompleteOnboarding() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: accountApi.completeOnboarding,
+    onSuccess: (user) => {
+      queryClient.setQueryData(authQueryKey, user)
+    },
+  })
+}
+
 export function useUploadAvatar() {
   const queryClient = useQueryClient()
   return useMutation({

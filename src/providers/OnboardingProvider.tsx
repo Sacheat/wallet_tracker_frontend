@@ -3,8 +3,8 @@ import "driver.js/dist/driver.css"
 import "@/features/onboarding/tour.css"
 import { createContext, useContext, useEffect, useRef, type ReactNode } from "react"
 import { useNavigate } from "react-router-dom"
+import { useCompleteOnboarding } from "@/features/account/hooks"
 import { TOUR_STEPS } from "@/features/onboarding/steps"
-import { hasSeenTour, markTourSeen } from "@/features/onboarding/tour-seen"
 import { useAuth } from "@/providers/AuthProvider"
 
 interface OnboardingContextValue {
@@ -24,8 +24,18 @@ const OnboardingContext = createContext<OnboardingContextValue | null>(null)
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth()
   const navigate = useNavigate()
+  const completeOnboarding = useCompleteOnboarding()
   const driverRef = useRef<Driver | null>(null)
   const autoStartedRef = useRef(false)
+  // getDriver() below only builds the driver.js instance once (config
+  // callbacks are captured at that point) - route the persistence call
+  // through a ref updated every render instead of closing over `mutate`
+  // directly, so onDestroyed always calls the current mutation, not a
+  // stale one from whichever render first constructed the driver.
+  const completeOnboardingRef = useRef(completeOnboarding.mutate)
+  useEffect(() => {
+    completeOnboardingRef.current = completeOnboarding.mutate
+  }, [completeOnboarding.mutate])
 
   function getDriver() {
     if (driverRef.current) return driverRef.current
@@ -40,8 +50,15 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       nextBtnText: "Suivant",
       prevBtnText: "Précédent",
       doneBtnText: "Terminer",
+      // Always marks onboarding as completed when the tour closes, whether
+      // finished or skipped (closed early), and whether started
+      // automatically or replayed manually from /account - a redundant
+      // PATCH on an already-completed account is harmless (just bumps the
+      // timestamp) and keeping this unconditional avoids a stale-closure
+      // check on `user` (this callback is captured once, see the comment
+      // above completeOnboardingRef).
       onDestroyed: () => {
-        markTourSeen()
+        completeOnboardingRef.current()
       },
       onNextClick: (_element, _step, opts) => {
         const nextIndex = (opts.state.activeIndex ?? 0) + 1
@@ -90,7 +107,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     if (autoStartedRef.current) return
     if (!isAuthenticated || !user) return
     if (user.email_verified_at === null) return
-    if (hasSeenTour()) return
+    if (user.onboarding_completed_at !== null) return
     autoStartedRef.current = true
     const timer = setTimeout(start, 600)
     return () => clearTimeout(timer)

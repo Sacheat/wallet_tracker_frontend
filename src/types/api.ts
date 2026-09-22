@@ -10,6 +10,9 @@ export interface User {
   email_verified_at: string | null
   avatar_url: string | null
   currency: CurrencyCode
+  // Same convention as email_verified_at: null = not done yet. Set via
+  // PATCH /user with {onboarding_completed: true} - see OnboardingProvider.
+  onboarding_completed_at: string | null
 }
 
 // GET /api/exchange-rates - shares the same 45s-TTL cache/source as

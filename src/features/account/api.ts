@@ -34,6 +34,14 @@ export async function updateCurrency(currency: CurrencyCode) {
   return data
 }
 
+// Same PATCH /user field-is-independently-optional pattern as currency -
+// backend sets onboarding_completed_at = now() server-side, no
+// current_password needed. See OnboardingProvider.
+export async function completeOnboarding() {
+  const { data } = await httpClient.patch<User>("/user", { onboarding_completed: true })
+  return data
+}
+
 export async function uploadAvatar(blob: Blob) {
   const formData = new FormData()
   formData.append("avatar", blob, "avatar.jpg")
