@@ -1,5 +1,7 @@
+import { History } from "lucide-react"
 import { useMemo } from "react"
 import { parseApiDate } from "@/lib/parse-date"
+import { isHistorySparse } from "@/lib/price-history"
 import type { PricePoint } from "@/types/api"
 
 const WIDTH = 64
@@ -7,6 +9,8 @@ const HEIGHT = 24
 const PAD = 2
 
 export function MiniSparkline({ points }: { points: PricePoint[] }) {
+  const sparse = useMemo(() => isHistorySparse(points), [points])
+
   const path = useMemo(() => {
     const data = points
       .map((p) => ({ price: Number(p.price_usd), date: parseApiDate(p.recorded_at) }))
@@ -33,6 +37,20 @@ export function MiniSparkline({ points }: { points: PricePoint[] }) {
 
   if (!path) {
     return <span className="text-muted-foreground text-xs">—</span>
+  }
+
+  // Enough points to draw a line, but they don't actually reach back far
+  // enough to call it a "7 jours" trend - a chart here would misrepresent
+  // what's really just the last day or so of data.
+  if (sparse) {
+    return (
+      <span
+        className="text-muted-foreground inline-flex items-center"
+        title="Historique en cours de constitution - pas encore assez de recul pour une tendance 7 jours fiable."
+      >
+        <History className="size-3.5" />
+      </span>
+    )
   }
 
   return (

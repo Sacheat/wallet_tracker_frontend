@@ -1,5 +1,7 @@
+import { History } from "lucide-react"
 import { useId, useMemo, useRef, useState } from "react"
 import { parseApiDate } from "@/lib/parse-date"
+import { getHistorySpanDays, isHistorySparse } from "@/lib/price-history"
 import type { PricePoint } from "@/types/api"
 
 const WIDTH = 480
@@ -68,6 +70,28 @@ export function PriceHistoryChart({
     return (
       <div className="text-muted-foreground flex h-[140px] items-center justify-center text-sm">
         Pas encore assez d'historique pour un graphique.
+      </div>
+    )
+  }
+
+  // There are enough points to draw a line, but they don't reach back far
+  // enough to represent a real "7 jours" trend (e.g. an hourly collector
+  // that hasn't been running long, or was offline for part of the window)
+  // - showing the chart anyway would misrepresent a day or so of data as a
+  // full week's movement.
+  if (isHistorySparse(points)) {
+    const hours = Math.round(getHistorySpanDays(points) * 24)
+    return (
+      <div className="text-muted-foreground flex h-[140px] flex-col items-center justify-center gap-2 text-center text-sm">
+        <History className="size-5" />
+        <p>
+          Historique en cours de constitution
+          <br />
+          <span className="text-xs">
+            {hours}h de données sur les 7 jours visés — reviens plus tard pour voir la
+            tendance complète.
+          </span>
+        </p>
       </div>
     )
   }
