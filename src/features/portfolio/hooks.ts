@@ -83,6 +83,9 @@ export function useMergedPortfolio() {
     rows,
     totalValueUsd: valuedQuery.data?.total_value_usd ?? null,
     totalValueEur: valuedQuery.data?.total_value_eur ?? null,
+    // Server-computed, live - see the ChangePercent note on
+    // PortfolioResponse in types/api.ts.
+    totalChangePercent: valuedQuery.data?.change_percent ?? null,
     isLoading: entriesQuery.isLoading || valuedQuery.isLoading,
     isError: entriesQuery.isError,
     error: entriesQuery.error,
@@ -99,13 +102,6 @@ export interface PortfolioTableRow extends PortfolioRow {
   history7d: PricePoint[]
   hasActiveAlert: boolean
   isGoldUnavailable: boolean
-}
-
-export interface PortfolioDelta {
-  deltaUsd: number
-  deltaPercent: number
-  coveredCount: number
-  totalCount: number
 }
 
 /**
@@ -150,32 +146,9 @@ export function usePortfolioTable() {
     }
   })
 
-  const delta = useMemo<PortfolioDelta | null>(() => {
-    const covered = rows.filter(
-      (r) => r.valueUsd !== null && r.change24h !== null && r.change24h !== -100,
-    )
-    if (covered.length === 0) return null
-
-    let totalNow = 0
-    let totalYesterday = 0
-    for (const r of covered) {
-      totalNow += r.valueUsd!
-      totalYesterday += r.valueUsd! / (1 + r.change24h! / 100)
-    }
-    if (totalYesterday === 0) return null
-
-    return {
-      deltaUsd: totalNow - totalYesterday,
-      deltaPercent: ((totalNow - totalYesterday) / totalYesterday) * 100,
-      coveredCount: covered.length,
-      totalCount: rows.length,
-    }
-  }, [rows])
-
   return {
     ...merged,
     rows,
-    delta,
     isLoading: merged.isLoading || detailQueries.some((q) => q.isLoading),
   }
 }

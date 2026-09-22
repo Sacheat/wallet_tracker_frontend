@@ -66,6 +66,15 @@ export interface PortfolioResponse {
   data: PortfolioValuedEntry[]
   total_value_usd: number
   total_value_eur: number
+  // Variation of the portfolio's *total* value (reconstructed server-side
+  // from each held asset's own change_percent, not a naive weighted
+  // average) - use this instead of recomputing a delta client-side from
+  // per-asset details.
+  change_percent: ChangePercent
+  // USD/EUR duplicate the two fields above; GBP/CHF only exist here (no
+  // per-row equivalent) - a currency is null only if its FX rate couldn't
+  // be fetched.
+  total_value_by_currency: Record<"USD" | "EUR" | "GBP" | "CHF", number | null>
 }
 
 export interface PortfolioEntry {

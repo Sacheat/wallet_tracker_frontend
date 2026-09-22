@@ -106,7 +106,7 @@ export function PortfolioPage() {
     rows,
     totalValueUsd,
     totalValueEur,
-    delta,
+    totalChangePercent,
     isLoading,
     isError,
     isValuationUnavailable,
@@ -285,14 +285,15 @@ export function PortfolioPage() {
         <StatTile
           label="Valeur totale"
           value={totalValueUsd !== null ? formatUsd(totalValueUsd) : "—"}
-          delta={delta && <GainLossValue value={delta.deltaPercent} />}
+          delta={totalChangePercent && <GainLossValue value={totalChangePercent["24h"]} />}
           secondaryValue={
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               {totalValueEur !== null && <span>{formatEur(totalValueEur)}</span>}
-              {delta && delta.coveredCount < delta.totalCount && (
-                <span className="text-xs">
-                  Variation calculée sur {delta.coveredCount}/{delta.totalCount} positions
-                </span>
+              {totalChangePercent && (
+                <div className="flex gap-3 text-xs">
+                  <span>1h <GainLossValue value={totalChangePercent["1h"]} /></span>
+                  <span>7j <GainLossValue value={totalChangePercent["7d"]} /></span>
+                </div>
               )}
               <Link to="/market" className="text-primary w-fit text-xs underline-offset-4 hover:underline">
                 Voir la répartition par type →
