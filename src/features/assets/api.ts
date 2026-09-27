@@ -6,7 +6,8 @@ export interface AssetPayload {
   symbol: string
   type: AssetType
   external_id?: string | null
-  logo_url?: string | null
+  // No logo_url: the backend refuses it on writes (422) - logos go through
+  // uploadAssetLogo() once the asset exists.
 }
 
 export async function getAssets() {
@@ -52,4 +53,17 @@ export async function updateAsset(id: number, payload: Partial<AssetPayload>) {
 
 export async function deleteAsset(id: number) {
   await httpClient.delete(`/api/assets/${id}`)
+}
+
+// multipart/form-data, field `logo` - see lib/logo-upload.ts for the rules.
+export async function uploadAssetLogo(id: number, file: File) {
+  const formData = new FormData()
+  formData.append("logo", file)
+  const { data } = await httpClient.post<Asset>(`/api/assets/${id}/logo`, formData)
+  return data
+}
+
+// 204 no content.
+export async function deleteAssetLogo(id: number) {
+  await httpClient.delete(`/api/assets/${id}/logo`)
 }

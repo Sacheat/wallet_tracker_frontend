@@ -21,12 +21,15 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { EntityAvatar } from "@/components/EntityAvatar"
+import { LogoPicker } from "@/components/LogoPicker"
 import { useCreatePlatform, useUpdatePlatform } from "@/features/platforms/hooks"
 import { platformFormSchema, type PlatformFormValues } from "@/features/platforms/schemas"
 import { toApiError } from "@/lib/http-client"
+import { KEEP_LOGO, resolveLogoPreview } from "@/lib/logo-upload"
+import { useLogoDraft } from "@/lib/use-logo-draft"
 import type { Platform } from "@/types/api"
 
-const EMPTY_VALUES: PlatformFormValues = { name: "", logo_url: "" }
+const EMPTY_VALUES: PlatformFormValues = { name: "" }
 
 export function PlatformFormDialog({
   platform,
@@ -47,27 +50,47 @@ export function PlatformFormDialog({
     defaultValues: EMPTY_VALUES,
   })
 
+  const [logoDraft, setLogoDraft] = useLogoDraft()
   const previewName = form.watch("name")
-  const previewLogoUrl = form.watch("logo_url")
+  const previewLogoUrl = resolveLogoPreview(platform?.logo_url ?? null, logoDraft)
 
   useEffect(() => {
     if (!open) return
-    form.reset(
-      platform
-        ? { name: platform.name, logo_url: platform.logo_url ?? "" }
-        : EMPTY_VALUES,
-    )
-  }, [platform, open, form])
+    form.reset(platform ? { name: platform.name } : EMPTY_VALUES)
+    setLogoDraft(KEEP_LOGO)
+  }, [platform, open, form, setLogoDraft])
 
   async function onSubmit(values: PlatformFormValues) {
-    const payload = { ...values, logo_url: values.logo_url || null }
     try {
       if (isEdit) {
-        await updatePlatform.mutateAsync({ id: platform.id, payload })
+        const { logoError } = await updatePlatform.mutateAsync({
+          id: platform.id,
+          payload: values,
+          logo: logoDraft,
+        })
+        if (logoError) {
+          // The name is saved; stay open so the logo alone can be retried
+          // (re-submitting only re-sends an idempotent PATCH).
+          form.setError("root", {
+            message: `Modifications enregistrées, mais pas le logo : ${logoError}`,
+          })
+          return
+        }
         toast.success("Plateforme mise à jour")
       } else {
-        await createPlatform.mutateAsync(payload)
-        toast.success("Plateforme créée")
+        const { logoError } = await createPlatform.mutateAsync({
+          payload: values,
+          logo: logoDraft,
+        })
+        if (logoError) {
+          // The platform exists now - close rather than let a re-submit
+          // POST it a second time.
+          toast.warning(`Plateforme créée, mais sans logo : ${logoError}`, {
+            description: "Tu peux l'ajouter en modifiant la plateforme.",
+          })
+        } else {
+          toast.success("Plateforme créée")
+        }
       }
       onOpenChange(false)
     } catch (error) {
@@ -105,18 +128,11 @@ export function PlatformFormDialog({
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="logo_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL du logo (optionnel)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <LogoPicker
+              currentUrl={platform?.logo_url ?? null}
+              draft={logoDraft}
+              onDraftChange={setLogoDraft}
+              disabled={isPending}
             />
             {form.formState.errors.root && (
               <p className="text-destructive text-sm">

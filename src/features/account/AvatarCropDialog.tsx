@@ -12,6 +12,7 @@ import {
 import { useUploadAvatar } from "@/features/account/hooks"
 import { getCroppedImageBlob, type PixelCrop } from "@/lib/crop-image"
 import { toApiError } from "@/lib/http-client"
+import { readImageDimensions } from "@/lib/image"
 import { cn } from "@/lib/utils"
 
 // Matches the backend's POST /user/avatar constraints exactly - checked
@@ -19,15 +20,6 @@ import { cn } from "@/lib/utils"
 const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"]
 const MAX_SIZE_BYTES = 2 * 1024 * 1024
 const MAX_DIMENSION = 4096
-
-function readImageDimensions(url: string): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight })
-    image.onerror = () => reject(new Error("Image invalide"))
-    image.src = url
-  })
-}
 
 export function AvatarCropDialog({
   open,

@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { EntityAvatar } from "@/components/EntityAvatar"
+import { LogoPicker } from "@/components/LogoPicker"
 import { useAssetSearch, useCreateAsset, useUpdateAsset } from "@/features/assets/hooks"
 import { assetFormSchema, type AssetFormValues } from "@/features/assets/schemas"
 import {
@@ -39,6 +40,8 @@ import {
   ASSET_TYPE_LABELS,
 } from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
+import { KEEP_LOGO, resolveLogoPreview } from "@/lib/logo-upload"
+import { useLogoDraft } from "@/lib/use-logo-draft"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
 import { cn } from "@/lib/utils"
 import type { Asset, AssetSearchResult } from "@/types/api"
@@ -48,7 +51,6 @@ const EMPTY_VALUES: AssetFormValues = {
   symbol: "",
   type: "crypto",
   external_id: "",
-  logo_url: "",
 }
 
 export function AssetFormDialog({
@@ -90,7 +92,8 @@ export function AssetFormDialog({
   const previewName = form.watch("name")
   const previewSymbol = form.watch("symbol")
   const previewType = form.watch("type")
-  const previewLogoUrl = form.watch("logo_url")
+  const [logoDraft, setLogoDraft] = useLogoDraft()
+  const previewLogoUrl = resolveLogoPreview(asset?.logo_url ?? null, logoDraft)
 
   useEffect(() => {
     if (!open) return
@@ -102,11 +105,11 @@ export function AssetFormDialog({
             symbol: asset.symbol,
             type: asset.type,
             external_id: asset.external_id ?? "",
-            logo_url: asset.logo_url ?? "",
           }
         : EMPTY_VALUES,
     )
-  }, [asset, open, form])
+    setLogoDraft(KEEP_LOGO)
+  }, [asset, open, form, setLogoDraft])
 
   function handleSelectResult(result: AssetSearchResult) {
     form.setValue("name", result.name, { shouldDirty: true })
@@ -133,18 +136,34 @@ export function AssetFormDialog({
   }
 
   async function onSubmit(values: AssetFormValues) {
-    const payload = {
-      ...values,
-      external_id: values.external_id || null,
-      logo_url: values.logo_url || null,
-    }
+    const payload = { ...values, external_id: values.external_id || null }
     try {
       if (isEdit) {
-        await updateAsset.mutateAsync({ id: asset.id, payload })
+        const { logoError } = await updateAsset.mutateAsync({
+          id: asset.id,
+          payload,
+          logo: logoDraft,
+        })
+        if (logoError) {
+          // The fields are saved; stay open so the logo alone can be
+          // retried (re-submitting only re-sends an idempotent PATCH).
+          form.setError("root", {
+            message: `Modifications enregistrées, mais pas le logo : ${logoError}`,
+          })
+          return
+        }
         toast.success("Actif mis à jour")
       } else {
-        await createAsset.mutateAsync(payload)
-        toast.success("Actif créé")
+        const { logoError } = await createAsset.mutateAsync({ payload, logo: logoDraft })
+        if (logoError) {
+          // The asset exists now - close rather than let a re-submit POST
+          // it again (it would 422 on the unique symbol anyway).
+          toast.warning(`Actif créé, mais sans logo : ${logoError}`, {
+            description: "Tu peux l'ajouter en modifiant l'actif.",
+          })
+        } else {
+          toast.success("Actif créé")
+        }
       }
       onOpenChange(false)
     } catch (error) {
@@ -312,18 +331,11 @@ export function AssetFormDialog({
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="logo_url"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL du logo (optionnel)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+            <LogoPicker
+              currentUrl={asset?.logo_url ?? null}
+              draft={logoDraft}
+              onDraftChange={setLogoDraft}
+              disabled={isPending}
             />
             {form.formState.errors.root && (
               <p className="text-destructive text-sm">

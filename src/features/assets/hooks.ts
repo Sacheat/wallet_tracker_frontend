@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import * as assetsApi from "@/features/assets/api"
+import { applyLogoDraft, type LogoDraft } from "@/lib/logo-upload"
+import type { Asset } from "@/types/api"
 
 export const assetsKeys = {
   all: ["assets"] as const,
@@ -52,26 +54,48 @@ export function useAssetNews(id: number) {
   })
 }
 
+function applyAssetLogo(asset: Asset, logo: LogoDraft) {
+  return applyLogoDraft(asset, logo, {
+    upload: (file) => assetsApi.uploadAssetLogo(asset.id, file),
+    remove: () => assetsApi.deleteAssetLogo(asset.id),
+  })
+}
+
+// Save the asset (JSON), then its logo (separate multipart call). A logo
+// failure doesn't reject - see applyLogoDraft - it comes back as
+// `logoError` so the caller can report it without re-submitting the save.
 export function useCreateAsset() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: assetsApi.createAsset,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: assetsKeys.all })
-    },
+    mutationFn: async ({ payload, logo }: { payload: assetsApi.AssetPayload; logo: LogoDraft }) =>
+      applyAssetLogo(await assetsApi.createAsset(payload), logo),
+    onSuccess: () => invalidateAssetCaches(queryClient),
   })
 }
 
 export function useUpdateAsset() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: Partial<assetsApi.AssetPayload> }) =>
-      assetsApi.updateAsset(id, payload),
-    onSuccess: (_data, { id }) => {
-      queryClient.invalidateQueries({ queryKey: assetsKeys.all })
-      queryClient.invalidateQueries({ queryKey: assetsKeys.detail(id) })
-    },
+    mutationFn: async ({
+      id,
+      payload,
+      logo,
+    }: {
+      id: number
+      payload: Partial<assetsApi.AssetPayload>
+      logo: LogoDraft
+    }) => applyAssetLogo(await assetsApi.updateAsset(id, payload), logo),
+    // assetsKeys.all is a prefix of every per-asset key (detail, details,
+    // news), so this covers the asset's own page too.
+    onSuccess: () => invalidateAssetCaches(queryClient),
   })
+}
+
+function invalidateAssetCaches(queryClient: ReturnType<typeof useQueryClient>) {
+  queryClient.invalidateQueries({ queryKey: assetsKeys.all })
+  // Portfolio entries embed the full asset (logo included). Literal key
+  // rather than portfolioKeys: portfolio/hooks already imports this module.
+  queryClient.invalidateQueries({ queryKey: ["portfolio-entries"] })
 }
 
 export function useDeleteAsset() {
