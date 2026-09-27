@@ -1,3 +1,4 @@
+import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import { toApiError } from "@/lib/http-client"
 import { readImageDimensions } from "@/lib/image"
 
@@ -54,13 +55,7 @@ export async function validateLogoFile(file: File): Promise<string | null> {
 }
 
 export function getLogoErrorMessage(error: unknown): string {
-  const apiError = toApiError(error)
-  if (apiError.status === 429) {
-    return apiError.retryAfterSeconds
-      ? `Trop d'envois de logo — réessaie dans ${apiError.retryAfterSeconds} s.`
-      : "Trop d'envois de logo — réessaie dans une minute."
-  }
-  return apiError.errors?.logo?.[0] ?? apiError.message
+  return toApiError(error).errors?.logo?.[0] ?? getCatalogErrorMessage(error)
 }
 
 /**

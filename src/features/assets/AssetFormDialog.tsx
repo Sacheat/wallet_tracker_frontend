@@ -39,7 +39,7 @@ import {
   ASSET_TYPE_CHART_TEXT_CLASS,
   ASSET_TYPE_LABELS,
 } from "@/lib/format"
-import { toApiError } from "@/lib/http-client"
+import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import { KEEP_LOGO, resolveLogoPreview } from "@/lib/logo-upload"
 import { useLogoDraft } from "@/lib/use-logo-draft"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
@@ -167,8 +167,10 @@ export function AssetFormDialog({
       }
       onOpenChange(false)
     } catch (error) {
-      const apiError = toApiError(error)
-      form.setError("root", { message: apiError.message })
+      // The JSON save itself failed (403 not allowed to edit, 422, 429...).
+      // The mutation stops there, so the logo is never sent after a
+      // refused PATCH - it would only be refused too.
+      form.setError("root", { message: getCatalogErrorMessage(error) })
     }
   }
 

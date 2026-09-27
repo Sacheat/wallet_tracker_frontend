@@ -13,6 +13,9 @@ export interface User {
   // Same convention as email_verified_at: null = not done yet. Set via
   // PATCH /user with {onboarding_completed: true} - see OnboardingProvider.
   onboarding_completed_at: string | null
+  // Read-only, set server-side only (php artisan user:admin). UI hint for
+  // showing admin-only controls - never a protection: the backend decides.
+  is_admin: boolean
 }
 
 // GET /api/exchange-rates - shares the same 45s-TTL cache/source as
@@ -166,6 +169,16 @@ export interface AuditLogEntry {
   action: "created" | "updated" | "deleted"
   changes: Record<string, unknown>
   created_at: string
+  user_id: number | null
+  // Where the action came from: "web" = through the API, "console" =
+  // system (scheduler, artisan command). null on entries written before
+  // 2026-09-28 - the cause can't be reconstructed for those.
+  source: "web" | "console" | null
+  // Only on GET /api/audit-logs?scope=all (admin). null when there is no
+  // author left: deleted account (source "web") or system action (source
+  // "console"). A console entry can still have an author - scheduler-fired
+  // alerts are attributed to the alert's owner.
+  user?: { id: number; name: string; avatar_url: string | null } | null
 }
 
 export interface Paginated<T> {

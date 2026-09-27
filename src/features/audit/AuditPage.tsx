@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, History } from "lucide-react"
 import { useState } from "react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -11,8 +12,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import type { AuditScope } from "@/features/audit/api"
 import { useAuditLogs } from "@/features/audit/hooks"
+import { toApiError } from "@/lib/http-client"
+import { getInitials } from "@/lib/initials"
 import { parseApiDate } from "@/lib/parse-date"
+import { safeImageUrl } from "@/lib/safe-url"
+import { useAuth } from "@/providers/AuthProvider"
 import type { AuditLogEntry } from "@/types/api"
 
 const MODEL_LABELS: Record<string, string> = {
@@ -34,18 +41,80 @@ const ACTION_VARIANTS: Record<AuditLogEntry["action"], "default" | "secondary" |
   deleted: "destructive",
 }
 
+/**
+ * Author cell of the global (admin) view. `source` tells an authorless
+ * entry apart: "web" = the account was deleted since, "console" = system
+ * action. A console entry can still have an author (scheduler-fired alerts
+ * are attributed to the alert's owner) - shown normally, flagged automatic.
+ * Entries from before `source` existed (null) can't be explained.
+ */
+function AuditAuthor({ entry }: { entry: AuditLogEntry }) {
+  if (entry.user) {
+    return (
+      <span className="flex items-center gap-2">
+        <Avatar className="size-6">
+          <AvatarImage src={safeImageUrl(entry.user.avatar_url) ?? undefined} alt="" />
+          <AvatarFallback className="text-[0.65rem]">
+            {getInitials(entry.user.name)}
+          </AvatarFallback>
+        </Avatar>
+        <span className="truncate">{entry.user.name}</span>
+        {entry.source === "console" && (
+          <span className="text-muted-foreground text-xs">· automatique</span>
+        )}
+      </span>
+    )
+  }
+  if (entry.source === "web") {
+    return <span className="text-muted-foreground">Compte supprimé</span>
+  }
+  if (entry.source === "console") {
+    return <span className="text-muted-foreground">Système</span>
+  }
+  return (
+    <span
+      className="text-muted-foreground"
+      title="Entrée antérieure au suivi de l'origine des actions : compte supprimé depuis, ou action système"
+    >
+      Auteur inconnu
+    </span>
+  )
+}
+
 function modelLabel(auditableType: string) {
   const shortName = auditableType.split("\\").pop() ?? auditableType
   return MODEL_LABELS[shortName] ?? shortName
 }
 
 export function AuditPage() {
+  const { user } = useAuth()
+  // is_admin only decides whether the choice is offered - a non-admin
+  // asking for "all" would just get a 403, the backend stays the judge.
+  const isAdmin = user?.is_admin === true
+  const [requestedScope, setRequestedScope] = useState<AuditScope>("mine")
+  const scope: AuditScope = isAdmin ? requestedScope : "mine"
+  const isGlobal = scope === "all"
   const [page, setPage] = useState(1)
-  const { data, isLoading, isPlaceholderData } = useAuditLogs(page)
+  const { data, isLoading, isError, error, isPlaceholderData } = useAuditLogs(page, scope)
+
+  function handleScopeChange(next: AuditScope) {
+    setRequestedScope(next)
+    setPage(1)
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold tracking-tight">Historique</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-xl font-semibold tracking-tight">Historique</h1>
+        {isAdmin && (
+          <Tabs value={scope} onValueChange={(value) => handleScopeChange(value as AuditScope)}>
+            <TabsList>
+              <TabsTrigger value="mine">Mon historique</TabsTrigger>
+              <TabsTrigger value="all">Tous les utilisateurs</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+      </div>
 
       {isLoading ? (
         <div className="flex flex-col gap-2">
@@ -53,13 +122,20 @@ export function AuditPage() {
             <Skeleton key={i} className="h-12 w-full" />
           ))}
         </div>
+      ) : isError ? (
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-16 text-center">
+          <History className="text-muted-foreground size-6" />
+          <p className="text-sm font-medium">Impossible de charger l'historique</p>
+          <p className="text-muted-foreground max-w-sm text-sm">{toApiError(error).message}</p>
+        </div>
       ) : !data || data.data.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed py-16 text-center">
           <History className="text-muted-foreground size-6" />
           <p className="text-sm font-medium">Aucune action enregistrée pour l'instant</p>
           <p className="text-muted-foreground max-w-sm text-sm">
-            Chaque création, modification ou suppression que tu fais apparaîtra
-            ici.
+            {isGlobal
+              ? "Aucun utilisateur n'a encore créé, modifié ou supprimé quoi que ce soit."
+              : "Chaque création, modification ou suppression que tu fais apparaîtra ici."}
           </p>
         </div>
       ) : (
@@ -69,6 +145,7 @@ export function AuditPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
+                  {isGlobal && <TableHead>Auteur</TableHead>}
                   <TableHead>Type</TableHead>
                   <TableHead>Action</TableHead>
                   <TableHead>Champs modifiés</TableHead>
@@ -80,6 +157,11 @@ export function AuditPage() {
                     <TableCell className="text-muted-foreground tabular-nums">
                       {parseApiDate(entry.created_at)?.toLocaleString("fr-FR") ?? "—"}
                     </TableCell>
+                    {isGlobal && (
+                      <TableCell>
+                        <AuditAuthor entry={entry} />
+                      </TableCell>
+                    )}
                     <TableCell>{modelLabel(entry.auditable_type)}</TableCell>
                     <TableCell>
                       <Badge variant={ACTION_VARIANTS[entry.action]}>

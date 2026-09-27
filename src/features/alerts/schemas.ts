@@ -10,6 +10,12 @@ const ALERT_TYPES = [
 
 const ASSET_TYPES = new Set(["price_above", "price_below", "percent_change"])
 
+// Backend bounds (422 beyond them) - mirrored for immediate feedback. The
+// threshold is typed in the account's currency; the bound applies to that
+// submitted value.
+const MAX_THRESHOLD = 100_000_000_000
+const MAX_THRESHOLD_MESSAGE = "100 000 000 000 maximum"
+
 export const createAlertSchema = z
   .object({
     type: z.enum(ALERT_TYPES, { error: "Choisis un type d'alerte" }),
@@ -30,6 +36,8 @@ export const createAlertSchema = z
       !(data.threshold && data.threshold > 0)
     ) {
       ctx.addIssue({ code: "custom", path: ["threshold"], message: "Seuil requis, > 0" })
+    } else if (data.threshold && data.threshold > MAX_THRESHOLD) {
+      ctx.addIssue({ code: "custom", path: ["threshold"], message: MAX_THRESHOLD_MESSAGE })
     }
     if (data.type === "percent_change") {
       if (!(data.percent_threshold && data.percent_threshold > 0)) {
@@ -55,7 +63,11 @@ export type CreateAlertFormInput = z.input<typeof createAlertSchema>
 export type CreateAlertFormValues = z.output<typeof createAlertSchema>
 
 export const editAlertSchema = z.object({
-  threshold: z.coerce.number().positive("Doit être positif").optional(),
+  threshold: z.coerce
+    .number()
+    .positive("Doit être positif")
+    .max(MAX_THRESHOLD, MAX_THRESHOLD_MESSAGE)
+    .optional(),
   percent_threshold: z.coerce.number().positive("Doit être positif").max(1000, "1000% maximum").optional(),
   window: z.enum(["1h", "24h", "7d"]).optional(),
 })
@@ -71,7 +83,8 @@ export const notificationSettingsSchema = z.object({
       .regex(
         /^https:\/\/(discord|discordapp)\.com\/api\/webhooks\//,
         "Doit commencer par discord(app).com/api/webhooks/",
-      ),
+      )
+      .max(255, "255 caractères maximum"),
     z.literal(""),
   ]),
   daily_digest_enabled: z.boolean(),

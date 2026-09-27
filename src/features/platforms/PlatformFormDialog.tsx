@@ -24,7 +24,7 @@ import { EntityAvatar } from "@/components/EntityAvatar"
 import { LogoPicker } from "@/components/LogoPicker"
 import { useCreatePlatform, useUpdatePlatform } from "@/features/platforms/hooks"
 import { platformFormSchema, type PlatformFormValues } from "@/features/platforms/schemas"
-import { toApiError } from "@/lib/http-client"
+import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import { KEEP_LOGO, resolveLogoPreview } from "@/lib/logo-upload"
 import { useLogoDraft } from "@/lib/use-logo-draft"
 import type { Platform } from "@/types/api"
@@ -94,8 +94,10 @@ export function PlatformFormDialog({
       }
       onOpenChange(false)
     } catch (error) {
-      const apiError = toApiError(error)
-      form.setError("root", { message: apiError.message })
+      // The JSON save itself failed (403 not allowed to edit, 422, 429...).
+      // The mutation stops there, so the logo is never sent after a
+      // refused PATCH - it would only be refused too.
+      form.setError("root", { message: getCatalogErrorMessage(error) })
     }
   }
 

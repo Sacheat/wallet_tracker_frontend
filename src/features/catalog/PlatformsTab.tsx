@@ -30,7 +30,7 @@ import {
 import { EntityAvatar } from "@/components/EntityAvatar"
 import { PlatformFormDialog } from "@/features/platforms/PlatformFormDialog"
 import { useDeletePlatform, usePlatforms } from "@/features/platforms/hooks"
-import { toApiError } from "@/lib/http-client"
+import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import type { Platform } from "@/types/api"
 
 type FormTarget = "closed" | "create" | Platform
@@ -47,10 +47,9 @@ export function PlatformsTab() {
       await deletePlatform.mutateAsync(deletingPlatform.id)
       toast.success("Plateforme supprimée")
     } catch (error) {
-      const apiError = toApiError(error)
-      toast.error(
-        apiError.status === 409 ? apiError.message : "La suppression a échoué.",
-      )
+      // 403 (not the creator / no longer only theirs) and 409 (still in
+      // use) both carry an explicit backend message worth showing as-is.
+      toast.error(getCatalogErrorMessage(error, "La suppression a échoué."))
     } finally {
       setDeletingPlatform(null)
     }

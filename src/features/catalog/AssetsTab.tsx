@@ -32,7 +32,7 @@ import { EntityAvatar } from "@/components/EntityAvatar"
 import { AssetFormDialog } from "@/features/assets/AssetFormDialog"
 import { useAssets, useDeleteAsset } from "@/features/assets/hooks"
 import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_CHART_TEXT_CLASS, ASSET_TYPE_LABELS } from "@/lib/format"
-import { toApiError } from "@/lib/http-client"
+import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import { cn } from "@/lib/utils"
 import type { Asset } from "@/types/api"
 
@@ -50,12 +50,9 @@ export function AssetsTab() {
       await deleteAsset.mutateAsync(deletingAsset.id)
       toast.success("Actif supprimé")
     } catch (error) {
-      const apiError = toApiError(error)
-      toast.error(
-        apiError.status === 409
-          ? apiError.message
-          : "La suppression a échoué.",
-      )
+      // 403 (not the creator / no longer only theirs) and 409 (still in
+      // use) both carry an explicit backend message worth showing as-is.
+      toast.error(getCatalogErrorMessage(error, "La suppression a échoué."))
     } finally {
       setDeletingAsset(null)
     }
