@@ -42,8 +42,19 @@ export async function register(payload: RegisterPayload) {
   return fetchCanonicalUser()
 }
 
+// A 401/419 here means the server-side session is already gone (expired,
+// or ended from another tab) - which is exactly the state logout wants, so
+// it counts as success and the local cache still gets wiped. Only a
+// network/5xx failure is a real "logout failed": the session may still be
+// alive server-side, so don't pretend otherwise.
 export async function logout() {
-  await httpClient.post("/logout")
+  try {
+    await httpClient.post("/logout")
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined
+    if (status === 401 || status === 419) return
+    throw error
+  }
 }
 
 export interface ResetPasswordPayload {

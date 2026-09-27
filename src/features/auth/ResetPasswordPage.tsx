@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -35,9 +36,20 @@ const FORM_FIELDS = new Set<keyof ResetPasswordFormValues>([
 
 export function ResetPasswordPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const token = searchParams.get("token")
-  const email = searchParams.get("email")
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Read once, then strip from the address bar: a live reset token
+  // shouldn't sit in browser history, synced tabs or a shared screen. A
+  // reload afterwards shows "Lien invalide" - reopening the email link works.
+  const [{ token, email }] = useState(() => ({
+    token: searchParams.get("token"),
+    email: searchParams.get("email"),
+  }))
+
+  useEffect(() => {
+    if (searchParams.has("token") || searchParams.has("email")) {
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
   const retryAfter = useRetryAfterCountdown()
 
   const form = useForm<ResetPasswordFormValues>({

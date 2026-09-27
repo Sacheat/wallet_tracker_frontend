@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { safeImageUrl } from "@/lib/safe-url"
 import { cn } from "@/lib/utils"
 
 /**
@@ -30,7 +31,8 @@ export function EntityAvatar({
     setErrored(false)
   }, [src])
 
-  const showImage = Boolean(src) && !errored
+  const safeSrc = safeImageUrl(src)
+  const showImage = Boolean(safeSrc) && !errored
 
   return (
     <div
@@ -42,7 +44,7 @@ export function EntityAvatar({
     >
       {showImage ? (
         <img
-          src={src ?? undefined}
+          src={safeSrc ?? undefined}
           alt=""
           className="size-full object-cover"
           onError={() => setErrored(true)}

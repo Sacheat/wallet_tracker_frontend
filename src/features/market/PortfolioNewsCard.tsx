@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePortfolioEntries, usePortfolioNews } from "@/features/portfolio/hooks"
 import { parseApiDate } from "@/lib/parse-date"
+import { safeLinkUrl } from "@/lib/safe-url"
 import { cn } from "@/lib/utils"
 
 export function PortfolioNewsCard() {
@@ -72,18 +73,18 @@ export function PortfolioNewsCard() {
           <ul className="flex flex-col gap-3">
             {filteredNews.map((item, index) => {
               const publishedAt = parseApiDate(item.published_at)
-              const hasLink = item.url.startsWith("http")
+              const href = safeLinkUrl(item.url)
               const assetId = item.asset_symbol
                 ? assetIdBySymbol.get(item.asset_symbol)
                 : undefined
               return (
                 <li key={`${item.title}-${index}`} className="flex items-start gap-2">
                   <div className="min-w-0 flex-1">
-                    {hasLink ? (
+                    {href ? (
                       <a
-                        href={item.url}
+                        href={href}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-sm font-medium underline-offset-4 hover:underline"
                       >
                         {item.title}

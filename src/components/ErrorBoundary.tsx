@@ -27,9 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
         <div className="flex min-h-svh flex-col items-center justify-center gap-3 px-4 text-center">
           <TriangleAlert className="text-destructive size-8" />
           <p className="text-sm font-medium">Une erreur inattendue est survenue.</p>
-          <p className="text-muted-foreground max-w-sm text-sm">
-            {this.state.error.message}
-          </p>
+          {/* Raw messages can expose internals (endpoints, payload shapes) -
+              dev only; the console keeps the full error either way. */}
+          {import.meta.env.DEV && (
+            <p className="text-muted-foreground max-w-sm text-sm">
+              {this.state.error.message}
+            </p>
+          )}
           <Button variant="outline" onClick={() => (window.location.href = "/")}>
             Retour au portefeuille
           </Button>

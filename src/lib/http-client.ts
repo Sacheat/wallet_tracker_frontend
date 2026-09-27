@@ -1,13 +1,50 @@
 import axios, { AxiosError } from "axios"
 
+// The localhost fallback is dev-only: vite.config.ts refuses to build for
+// production without VITE_API_BASE_URL, so a prod bundle can never silently
+// point at a developer's machine.
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
+
+const API_ORIGIN = new URL(API_BASE_URL).origin
 
 export const httpClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  withXSRFToken: true,
+  // The API is cross-origin in dev (and possibly in prod), so axios's
+  // default same-origin check would never attach X-XSRF-TOKEN. Attach it
+  // for our own API origin only - never leak the token to a third-party URL
+  // someone might later call through this client.
+  withXSRFToken: (config) => {
+    try {
+      return new URL(config.url ?? "", config.baseURL ?? API_BASE_URL).origin === API_ORIGIN
+    } catch {
+      return false
+    }
+  },
 })
+
+type UnauthenticatedListener = () => void
+const unauthenticatedListeners = new Set<UnauthenticatedListener>()
+
+/**
+ * Fired whenever the backend answers 401 to a request made while we
+ * thought we had a session - expired session, logout from another tab,
+ * password changed elsewhere. AuthProvider subscribes to wipe the query
+ * cache (kept out of this module so it doesn't depend on React Query).
+ */
+export function onUnauthenticated(listener: UnauthenticatedListener) {
+  unauthenticatedListeners.add(listener)
+  return () => {
+    unauthenticatedListeners.delete(listener)
+  }
+}
+
+// GET /user is the session probe itself: its 401 just means "logged out"
+// and is already turned into `null` by getCurrentUser().
+function isSessionProbe(config: { url?: string; method?: string } | undefined) {
+  return config?.url === "/user" && (config.method ?? "get").toLowerCase() === "get"
+}
 
 let csrfCookiePromise: Promise<void> | null = null
 
@@ -50,6 +87,9 @@ httpClient.interceptors.response.use(
       csrfCookiePromise = null
       await ensureCsrfCookie()
       return httpClient(config)
+    }
+    if (error.response?.status === 401 && !isSessionProbe(config)) {
+      for (const listener of unauthenticatedListeners) listener()
     }
     return Promise.reject(error)
   },

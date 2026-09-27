@@ -14,6 +14,7 @@ import {
   ASSET_TYPE_LABELS,
 } from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
+import { safeLinkUrl } from "@/lib/safe-url"
 import { useAnimatedNumber } from "@/lib/use-animated-number"
 import { cn } from "@/lib/utils"
 import { useCurrency } from "@/providers/CurrencyProvider"
@@ -137,14 +138,14 @@ export function AssetDetailPage() {
             <ul className="flex flex-col gap-3">
               {news.map((item, index) => {
                 const publishedAt = parseApiDate(item.published_at)
-                const hasLink = item.url.startsWith("http")
+                const href = safeLinkUrl(item.url)
                 return (
                   <li key={`${item.title}-${index}`}>
-                    {hasLink ? (
+                    {href ? (
                       <a
-                        href={item.url}
+                        href={href}
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                         className="text-sm font-medium underline-offset-4 hover:underline"
                       >
                         {item.title}

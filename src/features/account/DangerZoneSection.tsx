@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { useNavigate } from "react-router-dom"
@@ -28,12 +27,12 @@ import {
   type DeleteAccountFormValues,
 } from "@/features/account/schemas"
 import { toApiError } from "@/lib/http-client"
-import { authQueryKey } from "@/providers/AuthProvider"
+import { useAuth } from "@/providers/AuthProvider"
 
 export function DangerZoneSection() {
   const [open, setOpen] = useState(false)
   const deleteAccount = useDeleteAccount()
-  const queryClient = useQueryClient()
+  const { endSession } = useAuth()
   const navigate = useNavigate()
 
   const form = useForm<DeleteAccountFormValues>({
@@ -48,8 +47,7 @@ export function DangerZoneSection() {
       // session is invalidated server-side by the delete, and every
       // cached response (portfolio, alerts, ...) belonged to an account
       // that no longer exists.
-      queryClient.clear()
-      queryClient.setQueryData(authQueryKey, null)
+      endSession()
       navigate("/login", { replace: true })
     } catch (error) {
       const apiError = toApiError(error)
