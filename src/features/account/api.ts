@@ -1,3 +1,4 @@
+import axios from "axios"
 import { httpClient } from "@/lib/http-client"
 import type { CurrencyCode, User } from "@/types/api"
 
@@ -56,4 +57,28 @@ export async function deleteAvatar() {
 
 export async function deleteAccount(password: string) {
   await httpClient.delete("/user", { data: { password } })
+}
+
+/**
+ * GET /user/export - every piece of data tied to the account, as a JSON
+ * file (RGPD right to data portability). 3 req/min (429 + Retry-After).
+ * Content-Disposition isn't exposed through CORS, so the caller names the
+ * file itself.
+ */
+export async function exportMyData() {
+  try {
+    const { data } = await httpClient.get<Blob>("/user/export", { responseType: "blob" })
+    return data
+  } catch (error) {
+    // With responseType "blob", error bodies arrive as a Blob too - turn the
+    // backend's JSON back into an object so toApiError() can read `message`.
+    if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+      try {
+        error.response.data = JSON.parse(await error.response.data.text())
+      } catch {
+        // Not JSON (e.g. an HTML error page) - keep axios's own message.
+      }
+    }
+    throw error
+  }
 }

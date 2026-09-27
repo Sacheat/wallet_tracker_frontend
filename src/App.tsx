@@ -12,6 +12,9 @@ import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage"
 import { LoginPage } from "@/features/auth/LoginPage"
 import { RegisterPage } from "@/features/auth/RegisterPage"
 import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage"
+import { LEGAL_ROUTES } from "@/features/legal/constants"
+import { LegalNoticePage } from "@/features/legal/LegalNoticePage"
+import { PrivacyPolicyPage } from "@/features/legal/PrivacyPolicyPage"
 import { CatalogPage } from "@/features/catalog/CatalogPage"
 import { MarketPage } from "@/features/market/MarketPage"
 import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
@@ -74,6 +77,9 @@ function AppRoutes() {
           <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/account" element={<AccountPage />} />
         </Route>
+        {/* Public whether logged in or not - outside both route guards. */}
+        <Route path={LEGAL_ROUTES.notice} element={<LegalNoticePage />} />
+        <Route path={LEGAL_ROUTES.privacy} element={<PrivacyPolicyPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </ErrorBoundary>

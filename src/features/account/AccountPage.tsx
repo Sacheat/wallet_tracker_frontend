@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { AvatarSection } from "@/features/account/AvatarSection"
 import { CurrencySection } from "@/features/account/CurrencySection"
 import { DangerZoneSection } from "@/features/account/DangerZoneSection"
+import { DataExportSection } from "@/features/account/DataExportSection"
 import { PasswordSection } from "@/features/account/PasswordSection"
 import { ProfileSection } from "@/features/account/ProfileSection"
 import { useAuth } from "@/providers/AuthProvider"
@@ -32,6 +33,7 @@ export function AccountPage() {
       <ProfileSection user={user} />
       <CurrencySection />
       <PasswordSection />
+      <DataExportSection />
       <DangerZoneSection />
     </div>
   )

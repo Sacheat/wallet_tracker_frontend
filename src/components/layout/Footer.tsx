@@ -1,8 +1,8 @@
 import { Mail, Sparkles } from "lucide-react"
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { WhatsNewDialog } from "@/features/changelog/WhatsNewDialog"
-
-const CONTACT_EMAIL = "sacha.libion@outlook.com"
+import { CONTACT_EMAIL, LEGAL_ROUTES } from "@/features/legal/constants"
 
 export function Footer() {
   const [changelogOpen, setChangelogOpen] = useState(false)
@@ -11,7 +11,13 @@ export function Footer() {
     <footer className="border-border/60 mt-auto border-t">
       <div className="text-muted-foreground mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4 text-xs sm:px-6">
         <span>Portfolio Tracker — projet étudiant</span>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link to={LEGAL_ROUTES.notice} className="hover:text-foreground">
+            Mentions légales
+          </Link>
+          <Link to={LEGAL_ROUTES.privacy} className="hover:text-foreground">
+            Confidentialité
+          </Link>
           <button
             type="button"
             onClick={() => setChangelogOpen(true)}

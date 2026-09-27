@@ -18,6 +18,7 @@ import { useAuth } from "@/providers/AuthProvider"
 import { toApiError } from "@/lib/http-client"
 import { useRetryAfterCountdown } from "@/lib/use-retry-after-countdown"
 import { AuthLayout } from "@/features/auth/AuthLayout"
+import { LEGAL_ROUTES } from "@/features/legal/constants"
 import { registerSchema, type RegisterFormValues } from "@/features/auth/schemas"
 
 export function RegisterPage() {
@@ -138,6 +139,18 @@ export function RegisterPage() {
                     ? "Création..."
                     : "Créer le compte"}
               </Button>
+              {/* Information, not consent: the legal basis is performing the
+                  service the user asks for, so no checkbox. */}
+              <p className="text-muted-foreground text-center text-xs">
+                En créant un compte, tu acceptes la{" "}
+                <Link
+                  to={LEGAL_ROUTES.privacy}
+                  className="text-foreground underline underline-offset-4"
+                >
+                  politique de confidentialité
+                </Link>
+                .
+              </p>
             </form>
           </Form>
         </CardContent>

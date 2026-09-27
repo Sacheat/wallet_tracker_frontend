@@ -1,3 +1,5 @@
+import { downloadBlob } from "@/lib/download"
+
 // Cells starting with one of these are evaluated as formulas by Excel /
 // LibreOffice / Sheets. Asset and platform names come from the shared
 // catalog (any user can create one), so a name like
@@ -22,11 +24,5 @@ export function downloadCsv(filename: string, rows: Record<string, string | numb
     ...rows.map((row) => headers.map((h) => escapeCsvCell(row[h])).join(",")),
   ]
 
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement("a")
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
+  downloadBlob(new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" }), filename)
 }
