@@ -3,7 +3,11 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/((?!assets/).*)",
+      "source": "/backend/:path*",
+      "destination": "https://pftracker.alwaysdata.net/:path*"
+    },
+    {
+      "source": "/((?!backend/|assets/).*)",
       "destination": "/index.html"
     }
   ],
@@ -21,7 +25,7 @@
       ]
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|backend/).*)",
       "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
     },
     {

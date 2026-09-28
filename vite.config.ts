@@ -2,20 +2,19 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig, loadEnv, type Plugin } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 
 /**
  * Production Content-Security-Policy, injected as a <meta> tag at build
- * time so the API origin comes from VITE_API_BASE_URL - one source of
- * truth, nothing hard-coded per environment. The inline theme script in
- * index.html is allowed by its sha256, computed here from the final HTML,
- * so editing that script can never silently break the page.
+ * time. The API is same-origin behind the /backend rewrite (vercel.json),
+ * so 'self' covers it - no backend origin to hard-code. The inline theme
+ * script in index.html is allowed by its sha256, computed here from the
+ * final HTML, so editing that script can never silently break the page.
  *
  * frame-ancestors can't be set from a <meta> tag: it's sent as an HTTP
  * header by vercel.json, alongside the other security headers.
  */
-function contentSecurityPolicy(apiBaseUrl: string): Plugin {
-  const apiOrigin = new URL(apiBaseUrl).origin
+function contentSecurityPolicy(): Plugin {
   return {
     name: 'content-security-policy',
     apply: 'build',
@@ -31,9 +30,11 @@ function contentSecurityPolicy(apiBaseUrl: string): Plugin {
           // 'unsafe-inline' for styles only: sonner injects a <style> tag at
           // runtime. Scripts stay locked down, which is what matters for XSS.
           "style-src 'self' 'unsafe-inline'",
-          // API calls, and logos/avatars served from the API's /storage.
-          `connect-src 'self' ${apiOrigin}`,
-          `img-src 'self' data: blob: ${apiOrigin}`,
+          // API calls go through the same-origin /backend proxy. Logos and
+          // avatars may still come back as absolute https URLs built from
+          // the backend's APP_URL - safeImageUrl() already filters those.
+          "connect-src 'self'",
+          "img-src 'self' data: blob: https:",
           "font-src 'self'",
           "object-src 'none'",
           "base-uri 'self'",
@@ -49,21 +50,24 @@ function contentSecurityPolicy(apiBaseUrl: string): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ command, mode }) => {
-  const env = loadEnv(mode, process.cwd(), 'VITE_')
-
-  // src/lib/http-client.ts falls back to http://localhost:8000 when this is
-  // unset - fine for `npm run dev`, never for a deployed bundle.
-  if (command === 'build' && !env.VITE_API_BASE_URL) {
-    throw new Error('VITE_API_BASE_URL is required to build (see .env.example).')
-  }
-
+export default defineConfig(({ command }) => {
   return {
     plugins: [
       react(),
       tailwindcss(),
-      ...(command === 'build' ? [contentSecurityPolicy(env.VITE_API_BASE_URL)] : []),
+      ...(command === 'build' ? [contentSecurityPolicy()] : []),
     ],
+    // Mirrors the /backend rewrite in vercel.json so the front code is the
+    // same in dev and prod.
+    server: {
+      proxy: {
+        '/backend': {
+          target: 'http://localhost:8000',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/backend/, ''),
+        },
+      },
+    },
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, './src'),

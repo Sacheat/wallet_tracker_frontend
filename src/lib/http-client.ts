@@ -1,27 +1,18 @@
 import axios, { AxiosError } from "axios"
 
-// The localhost fallback is dev-only: vite.config.ts refuses to build for
-// production without VITE_API_BASE_URL, so a prod bundle can never silently
-// point at a developer's machine.
-export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000"
-
-const API_ORIGIN = new URL(API_BASE_URL).origin
+// Every backend call goes through this same-origin prefix: vercel.json
+// rewrites /backend/* to the Laravel API in production, and vite.config.ts
+// proxies it to localhost:8000 in dev. Keeping the API first-party is what
+// lets Sanctum's session cookie survive - the Vercel and alwaysdata domains
+// are distinct public suffixes, so a direct call would be cross-site.
+export const API_BASE_URL = "/backend"
 
 export const httpClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  // The API is cross-origin in dev (and possibly in prod), so axios's
-  // default same-origin check would never attach X-XSRF-TOKEN. Attach it
-  // for our own API origin only - never leak the token to a third-party URL
-  // someone might later call through this client.
-  withXSRFToken: (config) => {
-    try {
-      return new URL(config.url ?? "", config.baseURL ?? API_BASE_URL).origin === API_ORIGIN
-    } catch {
-      return false
-    }
-  },
+  // Same-origin now, so axios's default check would attach X-XSRF-TOKEN
+  // anyway - kept explicit so it can't silently regress.
+  withXSRFToken: true,
 })
 
 type UnauthenticatedListener = () => void
