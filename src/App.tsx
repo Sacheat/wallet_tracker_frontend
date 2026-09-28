@@ -26,6 +26,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider"
 import { NotFoundPage } from "@/routes/NotFoundPage"
 import { ProtectedRoute } from "@/routes/ProtectedRoute"
 import { PublicOnlyRoute } from "@/routes/PublicOnlyRoute"
+import { Analytics } from "@vercel/analytics/react"
 
 /**
  * GET /email/verify/{id}/{hash} (the link clicked from the verification
@@ -96,6 +97,7 @@ export default function App() {
               <OfflineBanner />
               <AppRoutes />
               <Toaster />
+              <Analytics />
             </OnboardingProvider>
           </CurrencyProvider>
         </AuthProvider>
