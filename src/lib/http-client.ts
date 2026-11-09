@@ -1,9 +1,9 @@
 import axios, { AxiosError } from "axios"
 
-// Every backend call goes through this same-origin prefix: vercel.json
-// rewrites /backend/* to the Laravel API in production, and vite.config.ts
-// proxies it to localhost:8000 in dev. Keeping the API first-party is what
-// lets Sanctum's session cookie survive - the Vercel and alwaysdata domains
+// Every backend call goes through this same-origin prefix: NGINX forwards
+// /backend/* to the Laravel API in production (and vite.config.ts proxies it
+// in dev). Keeping the API on the frontend's own origin is what lets
+// Sanctum's session cookie stay first-party.
 // are distinct public suffixes, so a direct call would be cross-site.
 export const API_BASE_URL = "/backend"
 

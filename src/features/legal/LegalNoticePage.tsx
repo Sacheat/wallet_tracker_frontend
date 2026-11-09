@@ -28,13 +28,10 @@ export function LegalNoticePage() {
       <LegalSection title="Hébergement">
         <ul className="flex list-disc flex-col gap-2 pl-5">
           <li>
-            <span className="font-medium">Serveur d'application et base de données :</span>{" "}
-            ALWAYSDATA, SARL au capital de 200 000 €, RCS Paris 492 893 490, 91 rue du
-            Faubourg Saint Honoré, 75008 Paris, France.
-          </li>
-          <li>
-            <span className="font-medium">Site web (interface) :</span> Vercel Inc., 440 N
-            Barranca Avenue #4133, Covina, CA 91723, États-Unis.
+            <span className="font-medium">Interface, serveur d'application et base de données :</span>{" "}
+            serveur virtuel mis à disposition par [nom de l'école], hébergé par
+            [raison sociale de l'hébergeur], [forme juridique], [RCS ou numéro
+            d'entreprise], [adresse du siège], [pays].
           </li>
         </ul>
       </LegalSection>
