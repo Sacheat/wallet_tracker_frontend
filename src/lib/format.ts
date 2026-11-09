@@ -65,12 +65,14 @@ export const ASSET_TYPE_CHART_CLASS: Record<AssetType, string> = {
   etf: "bg-chart-4",
 }
 
-// Text-color counterpart of the above, for monogram avatars (EntityAvatar)
-// and anywhere else the categorical palette needs to color text rather
-// than a fill - same fixed order/values, just the `text-` utility.
-export const ASSET_TYPE_CHART_TEXT_CLASS: Record<AssetType, string> = {
-  crypto: "text-chart-1",
-  stock: "text-chart-2",
-  gold: "text-chart-3",
-  etf: "text-chart-4",
+// Monogram tone for EntityAvatar: a 15% tint of the type's color behind
+// text in that color. Written out in full on purpose - Tailwind only
+// generates classes it finds literally in the source, so building
+// `${ASSET_TYPE_CHART_CLASS[type]}/15` at runtime silently produced no
+// background for every type whose class didn't happen to appear elsewhere.
+export const ASSET_TYPE_AVATAR_TONE: Record<AssetType, string> = {
+  crypto: "bg-chart-1/15 text-chart-1",
+  stock: "bg-chart-2/15 text-chart-2",
+  gold: "bg-chart-3/15 text-chart-3",
+  etf: "bg-chart-4/15 text-chart-4",
 }

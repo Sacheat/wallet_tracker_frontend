@@ -32,9 +32,9 @@ export function CurrencySection() {
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-muted-foreground text-sm">
-          Tous les montants de l'app s'affichent dans cette devise. Les seuils
-          d'alertes de prix restent en dollars — c'est la devise de référence
-          utilisée pour leur déclenchement.
+          Tous les montants de l'app s'affichent dans cette devise, y compris
+          les seuils de tes alertes : tu les saisis dans cette devise, et ils
+          sont convertis en dollars au taux du jour quand tu les enregistres.
         </p>
         <Select value={currency} onValueChange={handleChange} items={CURRENCY_LABELS}>
           <SelectTrigger

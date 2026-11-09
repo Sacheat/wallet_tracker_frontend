@@ -9,14 +9,12 @@ import { PriceHistoryChart } from "@/components/PriceHistoryChart"
 import { StatTile } from "@/components/StatTile"
 import { useAsset, useAssetDetails, useAssetNews } from "@/features/assets/hooks"
 import {
-  ASSET_TYPE_CHART_CLASS,
-  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_AVATAR_TONE,
   ASSET_TYPE_LABELS,
 } from "@/lib/format"
 import { parseApiDate } from "@/lib/parse-date"
 import { safeLinkUrl } from "@/lib/safe-url"
 import { useAnimatedNumber } from "@/lib/use-animated-number"
-import { cn } from "@/lib/utils"
 import { useCurrency } from "@/providers/CurrencyProvider"
 
 export function AssetDetailPage() {
@@ -56,10 +54,7 @@ export function AssetDetailPage() {
         <EntityAvatar
           src={asset.logo_url}
           label={asset.symbol}
-          toneClassName={cn(
-            `${ASSET_TYPE_CHART_CLASS[asset.type]}/15`,
-            ASSET_TYPE_CHART_TEXT_CLASS[asset.type],
-          )}
+          toneClassName={ASSET_TYPE_AVATAR_TONE[asset.type]}
           className="size-9 text-sm"
         />
         <div>

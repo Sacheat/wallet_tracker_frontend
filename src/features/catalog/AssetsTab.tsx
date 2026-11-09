@@ -31,9 +31,8 @@ import {
 import { EntityAvatar } from "@/components/EntityAvatar"
 import { AssetFormDialog } from "@/features/assets/AssetFormDialog"
 import { useAssets, useDeleteAsset } from "@/features/assets/hooks"
-import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_CHART_TEXT_CLASS, ASSET_TYPE_LABELS } from "@/lib/format"
+import { ASSET_TYPE_AVATAR_TONE, ASSET_TYPE_LABELS } from "@/lib/format"
 import { getCatalogErrorMessage } from "@/lib/catalog-errors"
-import { cn } from "@/lib/utils"
 import type { Asset } from "@/types/api"
 
 type FormTarget = "closed" | "create" | Asset
@@ -99,10 +98,7 @@ export function AssetsTab() {
                       <EntityAvatar
                         src={asset.logo_url}
                         label={asset.symbol}
-                        toneClassName={cn(
-                          `${ASSET_TYPE_CHART_CLASS[asset.type]}/15`,
-                          ASSET_TYPE_CHART_TEXT_CLASS[asset.type],
-                        )}
+                        toneClassName={ASSET_TYPE_AVATAR_TONE[asset.type]}
                         className="size-5 text-[0.6rem]"
                       />
                       <span className="flex flex-col">

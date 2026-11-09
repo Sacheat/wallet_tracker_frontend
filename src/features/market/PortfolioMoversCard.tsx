@@ -5,8 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { EntityAvatar } from "@/components/EntityAvatar"
 import { GainLossValue } from "@/components/GainLossValue"
 import { usePortfolioMovers, type PortfolioMover } from "@/features/market/hooks"
-import { ASSET_TYPE_CHART_CLASS, ASSET_TYPE_CHART_TEXT_CLASS } from "@/lib/format"
-import { cn } from "@/lib/utils"
+import { ASSET_TYPE_AVATAR_TONE } from "@/lib/format"
 
 function MoverRow({ mover }: { mover: PortfolioMover }) {
   return (
@@ -18,10 +17,7 @@ function MoverRow({ mover }: { mover: PortfolioMover }) {
         <EntityAvatar
           src={mover.asset.logo_url}
           label={mover.asset.symbol}
-          toneClassName={cn(
-            `${ASSET_TYPE_CHART_CLASS[mover.asset.type]}/15`,
-            ASSET_TYPE_CHART_TEXT_CLASS[mover.asset.type],
-          )}
+          toneClassName={ASSET_TYPE_AVATAR_TONE[mover.asset.type]}
           className="size-5 text-[0.6rem]"
         />
         <span className="font-medium">{mover.asset.name}</span>

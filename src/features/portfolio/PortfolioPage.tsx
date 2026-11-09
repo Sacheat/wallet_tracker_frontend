@@ -57,8 +57,7 @@ import {
   type PortfolioTableRow,
 } from "@/features/portfolio/hooks"
 import {
-  ASSET_TYPE_CHART_CLASS,
-  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_AVATAR_TONE,
   ASSET_TYPE_LABELS,
   formatQuantity,
   formatUsd,
@@ -234,10 +233,7 @@ export function PortfolioPage() {
             <EntityAvatar
               src={row.assetLogoUrl}
               label={row.assetSymbol}
-              toneClassName={cn(
-                `${ASSET_TYPE_CHART_CLASS[row.assetType]}/15`,
-                ASSET_TYPE_CHART_TEXT_CLASS[row.assetType],
-              )}
+              toneClassName={ASSET_TYPE_AVATAR_TONE[row.assetType]}
               className="size-5 text-[0.6rem]"
             />
             <span>{row.assetName}</span>
@@ -334,10 +330,7 @@ export function PortfolioPage() {
         <EntityAvatar
           src={row.assetLogoUrl}
           label={row.assetSymbol}
-          toneClassName={cn(
-            `${ASSET_TYPE_CHART_CLASS[row.assetType]}/15`,
-            ASSET_TYPE_CHART_TEXT_CLASS[row.assetType],
-          )}
+          toneClassName={ASSET_TYPE_AVATAR_TONE[row.assetType]}
           className="size-9 shrink-0 text-xs"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
