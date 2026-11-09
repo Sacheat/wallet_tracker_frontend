@@ -14,9 +14,23 @@ Chaque entrée indique le type et l'id de l'objet concerné, l'action (`created`
 
 Le journal sert aussi d'**historique des déclenchements d'alertes** : les mises à jour de `condition_met` et `last_triggered_at` y apparaissent.
 
+## Affichage
+
+| Colonne | Contenu |
+| --- | --- |
+| Date | Date et heure locales (`fr-FR`). Sur mobile, l'heure passe sous la date. |
+| Auteur | Vue globale uniquement, voir plus bas |
+| Type | Nom lisible du modèle (`App\Models\PortfolioEntry` → « Position ») via `MODEL_LABELS`. Un modèle inconnu affiche son nom court. |
+| Action | Badge « Créé », « Modifié » ou « Supprimé » |
+| Champs modifiés | Les clés de `changes`, séparées par des virgules |
+
+Sous le tableau : le nombre total d'actions et une pagination Précédent / Suivant. « Suivant » est désactivé quand `next_page_url` est vide, et aussi pendant qu'une page est encore en cours de chargement.
+
+Pour ajouter un modèle audité côté backend, il suffit d'ajouter son libellé dans `MODEL_LABELS` (`AuditPage.tsx`).
+
 ## Vue admin
 
-- Si `user.is_admin`, un sélecteur propose « Mes actions » ou « Tous les utilisateurs » (`scope=all`). Pour un non-admin, le backend répondrait 403 : `is_admin` ne fait qu'afficher ou masquer le choix.
+- Si `user.is_admin`, des onglets proposent « Mon historique » ou « Tous les utilisateurs » (`scope=all`). Changer d'onglet revient à la page 1. Pour un non-admin, le backend répondrait 403 : `is_admin` ne fait qu'afficher ou masquer le choix.
 - En vue globale, chaque entrée porte un `user: { id, name, avatar_url }`. La cellule « Auteur » affiche :
 
 | Cas | Affichage |

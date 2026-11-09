@@ -15,7 +15,8 @@ Après création, `type` et `asset_id` ne sont plus modifiables. L'édition (`Ed
 
 ## Seuils et devises
 
-- Les seuils monétaires sont **saisis dans la devise du compte**. Le libellé du champ indique la devise, et le nombre est envoyé tel quel : c'est le backend qui convertit en USD.
+- Les seuils monétaires sont **saisis dans la devise du compte**. Le libellé du champ indique la devise, et le nombre est envoyé tel quel : c'est le backend qui le convertit en USD, **au taux du jour de l'enregistrement**, puis le stocke et le compare en USD.
+- Conséquence : réaffiché plus tard avec le taux du jour, un seuil peut légèrement différer de ce qui a été saisi.
 - L'API **renvoie toujours `threshold` en USD**, sous forme de chaîne. La liste le reconvertit pour l'affichage, et l'édition le reconvertit pour préremplir le champ.
 - Pour un compte qui n'est pas en USD, la création ou la modification peut échouer en 503 si le taux est indisponible. `getAlertErrorMessage()` affiche alors un message invitant à réessayer.
 

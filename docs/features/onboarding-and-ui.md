@@ -29,7 +29,9 @@ Fichiers : `src/providers/OnboardingProvider.tsx`, `src/features/onboarding/step
 
 `src/features/changelog/entries.ts` contient une liste **écrite pour l'utilisateur**, la plus récente en premier, et tenue à la main : seuls les changements qui méritent d'être annoncés y figurent, pas chaque commit.
 
-> À compléter : les dernières fonctionnalités (journal d'achats et de ventes, plus-values, courbe d'historique, objectifs de répartition, alerte d'écart) n'y figurent pas encore.
+Chaque entrée a une date (`AAAA-MM-JJ`), un titre et une description d'une ou deux phrases. La fenêtre s'ouvre depuis « Quoi de neuf » dans le pied de page.
+
+Une entrée décrit ce que l'utilisateur gagne, pas ce qui a changé dans le code : pas de migration d'hébergement, de mise à jour de dépendances ni de refactorisation. Plusieurs nouveautés livrées le même jour font chacune leur entrée, avec la même date.
 
 ## Thème
 
@@ -37,11 +39,7 @@ Fichiers : `src/providers/OnboardingProvider.tsx`, `src/features/onboarding/step
 - Un script inline dans `index.html` pose la classe `dark` avant le premier rendu, pour éviter un flash. Son hash est ajouté automatiquement à la CSP au build (voir [déploiement](../deployment.md)).
 - Les couleurs sont des variables CSS définies dans `src/index.css` (Tailwind 4, shadcn).
 
-## Autres éléments transverses
+## Voir aussi
 
-| Élément | Rôle |
-| --- | --- |
-| `AppShell`, `UserMenu`, `ThemeToggle`, `Footer` | Navigation principale, menu du compte, liens légaux |
-| `OfflineBanner` | Bandeau affiché quand l'API est injoignable |
-| `ErrorBoundary` | Un par route. Les détails techniques ne s'affichent qu'en dev. |
-| Pages légales (`src/features/legal/`) | `/mentions-legales` et `/confidentialite`, accessibles connecté ou non. `PUBLICATION_MANAGER` est encore à renseigner. |
+- [Interface](../ui.md) : coquille de l'app, navigation mobile, couleurs, composants partagés.
+- [Pages légales](legal.md).
