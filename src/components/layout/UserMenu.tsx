@@ -34,14 +34,14 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" className="gap-2 px-2">
+          <Button variant="ghost" className="gap-2 px-1.5 xl:px-2" aria-label="Menu du compte">
             <Avatar className="size-6">
               <AvatarImage src={user.avatar_url ?? undefined} alt="" />
               <AvatarFallback className="text-xs">
                 {getInitials(user.name) || <UserIcon className="size-3.5" />}
               </AvatarFallback>
             </Avatar>
-            <span className="max-w-32 truncate text-sm">{user.name}</span>
+            <span className="hidden max-w-32 truncate text-sm xl:inline">{user.name}</span>
           </Button>
         }
       />

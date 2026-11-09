@@ -85,9 +85,9 @@ export function AssetsTab() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nom</TableHead>
-                <TableHead>Symbole</TableHead>
+                <TableHead className="hidden sm:table-cell">Symbole</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Identifiant provider</TableHead>
+                <TableHead className="hidden md:table-cell">Identifiant provider</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -105,14 +105,21 @@ export function AssetsTab() {
                         )}
                         className="size-5 text-[0.6rem]"
                       />
-                      {asset.name}
+                      <span className="flex flex-col">
+                        {asset.name}
+                        <span className="text-muted-foreground text-xs font-normal sm:hidden">
+                          {asset.symbol}
+                        </span>
+                      </span>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{asset.symbol}</TableCell>
+                  <TableCell className="text-muted-foreground hidden sm:table-cell">
+                    {asset.symbol}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{ASSET_TYPE_LABELS[asset.type]}</Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell className="text-muted-foreground hidden md:table-cell">
                     {asset.external_id ?? "—"}
                   </TableCell>
                   <TableCell>

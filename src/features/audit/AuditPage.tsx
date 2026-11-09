@@ -155,7 +155,7 @@ export function AuditPage() {
                 {data.data.map((entry) => (
                   <TableRow key={entry.id}>
                     <TableCell className="text-muted-foreground tabular-nums">
-                      {parseApiDate(entry.created_at)?.toLocaleString("fr-FR") ?? "—"}
+                      <AuditDate value={entry.created_at} />
                     </TableCell>
                     {isGlobal && (
                       <TableCell>
@@ -177,7 +177,7 @@ export function AuditPage() {
             </Table>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <p className="text-muted-foreground text-sm">{data.total} actions au total</p>
             <div className="flex items-center gap-2">
               <Button
@@ -202,5 +202,17 @@ export function AuditPage() {
         </>
       )}
     </div>
+  )
+}
+
+/** Date and time stacked on mobile, on one line from sm up. */
+function AuditDate({ value }: { value: string }) {
+  const date = parseApiDate(value)
+  if (!date) return <>—</>
+  return (
+    <span className="flex flex-col sm:flex-row sm:gap-1">
+      <span>{date.toLocaleDateString("fr-FR")}</span>
+      <span className="text-xs sm:text-sm">{date.toLocaleTimeString("fr-FR")}</span>
+    </span>
   )
 }
