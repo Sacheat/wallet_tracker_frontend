@@ -50,6 +50,22 @@ export function convertFromUsd(
   return amountUsd * rate
 }
 
+/**
+ * A per-unit price. formatMoney rounds to cents, which turns a 0.4299 €
+ * token price into "0,43 €" (or 0.000012 into "0,00 €"): below 1, keep 6
+ * significant digits instead.
+ */
+export function formatUnitPrice(amount: number, currency: CurrencyCode): string {
+  if (amount === 0 || Math.abs(amount) >= 1) return formatMoney(amount, currency)
+  return withVisibleNbsp(
+    new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency,
+      maximumSignificantDigits: 6,
+    }).format(amount),
+  )
+}
+
 export function formatMoney(amount: number | null, currency: CurrencyCode): string {
   if (amount === null) return "—"
   return withVisibleNbsp(getFormatter(currency).format(amount))

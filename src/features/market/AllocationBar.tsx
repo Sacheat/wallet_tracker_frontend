@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { usePortfolio } from "@/features/portfolio/hooks"
@@ -80,7 +81,12 @@ export function AllocationBar() {
             </li>
           ))}
         </ul>
-        <p className="text-muted-foreground text-xs">{format(total)} au total</p>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+          <p className="text-muted-foreground">{format(total)} au total</p>
+          <Link to="/allocation" className="text-primary underline-offset-4 hover:underline">
+            Détail et objectifs →
+          </Link>
+        </div>
       </CardContent>
     </Card>
   )

@@ -1,5 +1,6 @@
 import { Bell, MoreHorizontal } from "lucide-react"
 import { useState } from "react"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -28,6 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { useAllocationTargets } from "@/features/allocation/hooks"
 import { CreateAlertDialog } from "@/features/alerts/CreateAlertDialog"
 import { EditAlertDialog } from "@/features/alerts/EditAlertDialog"
 import { useAlerts, useDeleteAlert } from "@/features/alerts/hooks"
@@ -42,6 +44,9 @@ import type { PriceAlert } from "@/types/api"
 // the backend's own docs suggest for displaying it back.
 function alertSummary(alert: PriceAlert, format: (amountUsd: number) => string) {
   const label = ALERT_TYPE_LABELS[alert.type]
+  if (alert.type === "allocation_drift") {
+    return `${label} ≥ ${Number(alert.percent_threshold).toLocaleString("fr-FR")} pts`
+  }
   if (alert.type === "percent_change") {
     return `${alert.asset?.name ?? "Actif"} · ${label} ${Number(alert.percent_threshold)}% (${ALERT_WINDOW_LABELS[alert.window!]})`
   }
@@ -54,6 +59,11 @@ function alertSummary(alert: PriceAlert, format: (amountUsd: number) => string) 
 
 export function AlertsPage() {
   const { data: alerts = [], isLoading } = useAlerts()
+  const targetsQuery = useAllocationTargets()
+  // Clearing the targets keeps allocation_drift alerts (checked live), but
+  // they can't fire any more - say so rather than show them as healthy.
+  const targetsMissing =
+    targetsQuery.isSuccess && Object.keys(targetsQuery.data ?? {}).length === 0
   const { format } = useCurrency()
   const deleteAlert = useDeleteAlert()
   const [editingAlert, setEditingAlert] = useState<PriceAlert | null>(null)
@@ -106,7 +116,17 @@ export function AlertsPage() {
             <TableBody>
               {alerts.map((alert) => (
                 <TableRow key={alert.id}>
-                  <TableCell className="font-medium">{alertSummary(alert, format)}</TableCell>
+                  <TableCell className="font-medium">
+                    {alertSummary(alert, format)}
+                    {alert.type === "allocation_drift" && targetsMissing && (
+                      <p className="text-warning mt-0.5 text-xs font-normal">
+                        Sans objectifs de répartition, cette alerte ne peut pas se déclencher.{" "}
+                        <Link to="/allocation" className="underline underline-offset-4">
+                          Les définir
+                        </Link>
+                      </p>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant={alert.is_active ? "default" : "secondary"}>
                       {alert.is_active ? "Active" : "Inactive"}

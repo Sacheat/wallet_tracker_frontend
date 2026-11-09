@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Bell, History, LayoutGrid, LineChart, Wallet } from "lucide-react"
+import { Bell, History, LayoutGrid, LineChart, Target, Wallet } from "lucide-react"
 import { NavLink } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Footer } from "@/components/layout/Footer"
@@ -8,6 +8,7 @@ import { UserMenu } from "@/components/layout/UserMenu"
 
 const NAV_ITEMS = [
   { to: "/", label: "Portefeuille", icon: Wallet, end: true },
+  { to: "/allocation", label: "Répartition", icon: Target, end: false },
   { to: "/market", label: "Marché", icon: LineChart, end: false },
   { to: "/alerts", label: "Alertes", icon: Bell, end: false },
   { to: "/audit", label: "Historique", icon: History, end: false },

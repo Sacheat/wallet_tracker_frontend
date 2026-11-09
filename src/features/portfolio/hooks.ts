@@ -1,19 +1,44 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  keepPreviousData,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
 import { useMemo } from "react"
 import { useAlerts } from "@/features/alerts/hooks"
 import { getAssetDetails } from "@/features/assets/api"
 import { assetsKeys } from "@/features/assets/hooks"
 import * as portfolioApi from "@/features/portfolio/api"
-import type { AssetType, PricePoint } from "@/types/api"
+import { pickCurrency } from "@/features/portfolio/performance"
+import { useCurrency } from "@/providers/CurrencyProvider"
+import type { AssetType, HistoryRange, PositionPerformance, PricePoint } from "@/types/api"
 
 export const portfolioKeys = {
   valued: ["portfolio"] as const,
   news: ["portfolio", "news"] as const,
+  // Under ["portfolio"]: any buy/sell invalidates the curve too.
+  history: (range: HistoryRange) => ["portfolio", "history", range] as const,
   entries: ["portfolio-entries"] as const,
+  // Nested under entries so invalidating entries also refreshes every
+  // open transaction list.
+  transactions: (entryId: number) => ["portfolio-entries", entryId, "transactions"] as const,
 }
 
 export function usePortfolio() {
   return useQuery({ queryKey: portfolioKeys.valued, queryFn: portfolioApi.getPortfolio })
+}
+
+export function usePortfolioHistory(range: HistoryRange) {
+  return useQuery({
+    queryKey: portfolioKeys.history(range),
+    queryFn: () => portfolioApi.getPortfolioHistory(range),
+    // Server-side cache is one hour; no point refetching more often.
+    staleTime: 5 * 60_000,
+    // Switching range keeps the previous curve on screen (dimmed) instead
+    // of collapsing to a skeleton for the ~1-3 s first computation.
+    placeholderData: keepPreviousData,
+  })
 }
 
 export function usePortfolioEntries() {
@@ -36,32 +61,33 @@ export interface PortfolioRow {
   quantity: string
   valueUsd: number | null
   valueEur: number | null
+  // Already in the user's currency (picked, never converted). null when the
+  // position has a transaction without price, or valuation is unavailable.
+  performance: PositionPerformance | null
+  // True only when the backend explicitly says the price is missing - not
+  // when /api/portfolio itself failed (then we just don't know).
+  isMissingPrice: boolean
 }
 
 /**
- * Neither backend surface is sufficient alone: /api/portfolio has live
- * valuation but no ids (can't edit/delete/link to a row), /api/portfolio-entries
- * has ids but no computed value. Join them client-side on (asset name, platform
- * name), which is safe because the backend enforces that pair unique per user.
+ * /api/portfolio-entries gives full asset/platform relations (logo, symbol,
+ * ids for links); /api/portfolio gives live valuation and performance. Since
+ * 08/11/2026 both carry the position id, so they're joined on it (the old
+ * join on asset+platform *names* is gone).
  */
 export function useMergedPortfolio() {
   const entriesQuery = usePortfolioEntries()
   const valuedQuery = usePortfolio()
+  const { currency } = useCurrency()
 
   const rows = useMemo<PortfolioRow[]>(() => {
     if (!entriesQuery.data) return []
 
-    const valueByKey = new Map<string, { value_usd: number; value_eur: number }>()
-    for (const item of valuedQuery.data?.data ?? []) {
-      valueByKey.set(`${item.asset}|${item.platform}`, {
-        value_usd: item.value_usd,
-        value_eur: item.value_eur,
-      })
-    }
+    const valuedById = new Map((valuedQuery.data?.data ?? []).map((item) => [item.id, item]))
 
     return entriesQuery.data
       .map((entry): PortfolioRow => {
-        const match = valueByKey.get(`${entry.asset.name}|${entry.platform.name}`)
+        const valued = valuedById.get(entry.id)
         return {
           entryId: entry.id,
           assetId: entry.asset.id,
@@ -72,12 +98,14 @@ export function useMergedPortfolio() {
           platformId: entry.platform.id,
           platformName: entry.platform.name,
           quantity: entry.quantity,
-          valueUsd: match?.value_usd ?? null,
-          valueEur: match?.value_eur ?? null,
+          valueUsd: valued?.value_usd ?? null,
+          valueEur: valued?.value_eur ?? null,
+          performance: pickCurrency(valued?.performance, currency),
+          isMissingPrice: valued !== undefined && valued.performance === null,
         }
       })
       .sort((a, b) => (b.valueUsd ?? -1) - (a.valueUsd ?? -1))
-  }, [entriesQuery.data, valuedQuery.data])
+  }, [entriesQuery.data, valuedQuery.data, currency])
 
   return {
     rows,
@@ -86,6 +114,8 @@ export function useMergedPortfolio() {
     // Server-computed, live - see the ChangePercent note on
     // PortfolioResponse in types/api.ts.
     totalChangePercent: valuedQuery.data?.change_percent ?? null,
+    performanceTotals: pickCurrency(valuedQuery.data?.performance, currency),
+    positionsWithoutPrice: valuedQuery.data?.positions_without_price ?? 0,
     isLoading: entriesQuery.isLoading || valuedQuery.isLoading,
     isError: entriesQuery.isError,
     error: entriesQuery.error,
@@ -153,24 +183,52 @@ export function usePortfolioTable() {
   }
 }
 
+// Prefix match: ["portfolio"] also covers news and (later) history, and
+// ["portfolio-entries"] covers every transaction list - a buy/sell changes
+// quantity, valuation, performance and the value curve all at once.
 function invalidatePortfolio(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: portfolioKeys.entries })
   queryClient.invalidateQueries({ queryKey: portfolioKeys.valued })
+}
+
+export function useTransactions(entryId: number | null) {
+  return useQuery({
+    queryKey: portfolioKeys.transactions(entryId ?? 0),
+    queryFn: () => portfolioApi.getTransactions(entryId!),
+    enabled: entryId !== null,
+  })
+}
+
+export function useCreateTransaction(entryId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: portfolioApi.TransactionPayload) =>
+      portfolioApi.createTransaction(entryId, payload),
+    onSuccess: () => invalidatePortfolio(queryClient),
+  })
+}
+
+export function useUpdateTransaction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<portfolioApi.TransactionPayload> }) =>
+      portfolioApi.updateTransaction(id, payload),
+    onSuccess: () => invalidatePortfolio(queryClient),
+  })
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: portfolioApi.deleteTransaction,
+    onSuccess: () => invalidatePortfolio(queryClient),
+  })
 }
 
 export function useCreatePortfolioEntry() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: portfolioApi.createPortfolioEntry,
-    onSuccess: () => invalidatePortfolio(queryClient),
-  })
-}
-
-export function useUpdatePortfolioEntry() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: ({ id, quantity }: { id: number; quantity: number }) =>
-      portfolioApi.updatePortfolioEntryQuantity(id, quantity),
     onSuccess: () => invalidatePortfolio(queryClient),
   })
 }

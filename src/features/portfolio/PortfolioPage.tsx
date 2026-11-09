@@ -7,8 +7,10 @@ import {
   Layers,
   MoreHorizontal,
   Search,
+  TrendingUp,
   TriangleAlert,
   Wallet,
+  X,
 } from "lucide-react"
 import { Fragment, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
@@ -44,9 +46,11 @@ import {
 import { EntityAvatar } from "@/components/EntityAvatar"
 import { GainLossValue } from "@/components/GainLossValue"
 import { MiniSparkline } from "@/components/MiniSparkline"
+import { SignedMoney } from "@/components/SignedMoney"
 import { StatTile } from "@/components/StatTile"
 import { AddPositionDialog } from "@/features/portfolio/AddPositionDialog"
-import { EditQuantityDialog } from "@/features/portfolio/EditQuantityDialog"
+import { PortfolioHistoryCard } from "@/features/portfolio/PortfolioHistoryCard"
+import { TransactionsDialog } from "@/features/portfolio/TransactionsDialog"
 import {
   useDeletePortfolioEntry,
   usePortfolioTable,
@@ -61,11 +65,13 @@ import {
 } from "@/lib/format"
 import { downloadCsv } from "@/lib/csv"
 import { toApiError } from "@/lib/http-client"
+import { formatMoney, formatUnitPrice } from "@/lib/currency"
 import { useAnimatedNumber } from "@/lib/use-animated-number"
 import { cn } from "@/lib/utils"
 import { useCurrency } from "@/providers/CurrencyProvider"
+import type { CurrencyCode, PortfolioPerformanceTotals } from "@/types/api"
 
-type SortKey = "value" | "name" | "type" | "platform" | "quantity" | "change24h"
+type SortKey = "value" | "name" | "type" | "platform" | "quantity" | "change24h" | "pnl"
 
 const SORT_ACCESSORS: Record<SortKey, (row: PortfolioTableRow) => number | string> = {
   value: (r) => r.valueUsd ?? -Infinity,
@@ -74,6 +80,8 @@ const SORT_ACCESSORS: Record<SortKey, (row: PortfolioTableRow) => number | strin
   platform: (r) => r.platformName.toLowerCase(),
   quantity: (r) => Number(r.quantity),
   change24h: (r) => r.change24h ?? -Infinity,
+  // No performance (price missing, valuation down) sorts as the lowest.
+  pnl: (r) => r.performance?.unrealized_pnl ?? -Infinity,
 }
 
 function SortHeader({
@@ -115,15 +123,18 @@ export function PortfolioPage() {
     rows,
     totalValueUsd,
     totalChangePercent,
+    performanceTotals,
+    positionsWithoutPrice,
     isLoading,
     isError,
     isValuationUnavailable,
   } = usePortfolioTable()
   const { currency, format } = useCurrency()
   const animatedTotalValueUsd = useAnimatedNumber(totalValueUsd)
-  const [editingRow, setEditingRow] = useState<PortfolioTableRow | null>(null)
   const [deletingRow, setDeletingRow] = useState<PortfolioTableRow | null>(null)
+  const [transactionsRow, setTransactionsRow] = useState<PortfolioTableRow | null>(null)
   const [search, setSearch] = useState("")
+  const [onlyMissingPrice, setOnlyMissingPrice] = useState(false)
   const [sortKey, setSortKey] = useState<SortKey>("value")
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc")
   const [groupByPlatform, setGroupByPlatform] = useState(false)
@@ -141,14 +152,14 @@ export function PortfolioPage() {
 
   const filteredRows = useMemo(() => {
     const query = search.trim().toLowerCase()
-    const filtered = query
-      ? rows.filter(
-          (r) =>
-            r.assetName.toLowerCase().includes(query) ||
-            r.assetSymbol.toLowerCase().includes(query) ||
-            r.platformName.toLowerCase().includes(query),
-        )
-      : rows
+    const filtered = rows.filter(
+      (r) =>
+        (!onlyMissingPrice || r.isMissingPrice) &&
+        (!query ||
+          r.assetName.toLowerCase().includes(query) ||
+          r.assetSymbol.toLowerCase().includes(query) ||
+          r.platformName.toLowerCase().includes(query)),
+    )
 
     const accessor = SORT_ACCESSORS[sortKey]
     const sorted = [...filtered].sort((a, b) => {
@@ -158,7 +169,7 @@ export function PortfolioPage() {
       return sortDir === "asc" ? cmp : -cmp
     })
     return sorted
-  }, [rows, search, sortKey, sortDir])
+  }, [rows, search, onlyMissingPrice, sortKey, sortDir])
 
   const groups = useMemo(() => {
     if (!groupByPlatform) return null
@@ -199,6 +210,14 @@ export function PortfolioPage() {
         variation_24h: r.change24h ?? "",
         valeur_usd: r.valueUsd ?? "",
         valeur_eur: r.valueEur ?? "",
+        // Performance columns are in the account currency, as served.
+        devise_plus_values: currency,
+        prix_de_revient: r.performance?.cost_basis ?? "",
+        prix_moyen_achat: r.performance?.average_buy_price ?? "",
+        plus_value_latente: r.performance?.unrealized_pnl ?? "",
+        plus_value_latente_pct: r.performance?.unrealized_pnl_percent ?? "",
+        plus_value_realisee: r.performance?.realized_pnl ?? "",
+        prix_achat_manquant: r.isMissingPrice ? "oui" : "",
       })),
     )
   }
@@ -238,7 +257,17 @@ export function PortfolioPage() {
           <TableCell className="text-muted-foreground">{row.platformName}</TableCell>
         )}
         <TableCell className="text-right tabular-nums">
-          {formatQuantity(row.quantity)}
+          <div className="flex flex-col">
+            <span>{formatQuantity(row.quantity)}</span>
+            {row.performance?.average_buy_price != null && (
+              <span
+                className="text-muted-foreground text-xs"
+                title="Prix moyen d'achat (frais compris)"
+              >
+                PRU {formatUnitPrice(row.performance.average_buy_price, currency)}
+              </span>
+            )}
+          </div>
         </TableCell>
         <TableCell className="text-right">
           <GainLossValue value={row.change24h} className="justify-end" />
@@ -267,6 +296,9 @@ export function PortfolioPage() {
             <span className="text-muted-foreground">—</span>
           )}
         </TableCell>
+        <TableCell className="text-right">
+          <PnlCell row={row} currency={currency} onFillPrice={() => setTransactionsRow(row)} />
+        </TableCell>
         <TableCell onClick={(e) => e.stopPropagation()}>
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -277,8 +309,8 @@ export function PortfolioPage() {
               }
             />
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setEditingRow(row)}>
-                Modifier la quantité
+              <DropdownMenuItem onClick={() => setTransactionsRow(row)}>
+                Achats et ventes
               </DropdownMenuItem>
               <DropdownMenuItem variant="destructive" onClick={() => setDeletingRow(row)}>
                 Supprimer
@@ -314,14 +346,23 @@ export function PortfolioPage() {
                   <span>7j <GainLossValue value={totalChangePercent["7d"]} /></span>
                 </div>
               )}
-              <Link to="/market" className="text-primary w-fit text-xs underline-offset-4 hover:underline">
+              <Link to="/allocation" className="text-primary w-fit text-xs underline-offset-4 hover:underline">
                 Voir la répartition par type →
               </Link>
             </div>
           }
           icon={<Wallet className="size-4.5" />}
         />
+        <PerformanceTile
+          totals={performanceTotals}
+          positionsWithoutPrice={positionsWithoutPrice}
+          isUnavailable={isValuationUnavailable}
+          isLoading={isLoading}
+          onShowMissing={() => setOnlyMissingPrice(true)}
+        />
       </div>
+
+      {rows.length > 0 && <PortfolioHistoryCard />}
 
       {isValuationUnavailable && (
         <div className="border-loss/30 bg-loss/5 text-loss flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
@@ -372,11 +413,18 @@ export function PortfolioPage() {
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download /> Export CSV
             </Button>
+            {onlyMissingPrice && (
+              <Button variant="secondary" size="sm" onClick={() => setOnlyMissingPrice(false)}>
+                Prix d'achat à renseigner <X aria-label="Retirer le filtre" />
+              </Button>
+            )}
           </div>
 
           {filteredRows.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center text-sm">
-              Aucune position ne correspond à "{search}".
+              {onlyMissingPrice && !search
+                ? "Tous les prix d'achat sont renseignés."
+                : `Aucune position ne correspond à "${search}".`}
             </p>
           ) : (
             <div className="overflow-hidden rounded-lg border">
@@ -419,6 +467,14 @@ export function PortfolioPage() {
                       onSort={handleSort}
                       className="text-right"
                     />
+                    <SortHeader
+                      label="Plus-value"
+                      sortKey="pnl"
+                      activeKey={sortKey}
+                      direction={sortDir}
+                      onSort={handleSort}
+                      className="text-right"
+                    />
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -427,7 +483,7 @@ export function PortfolioPage() {
                     ? groups.map(([platformName, platformRows]) => (
                         <Fragment key={`group-${platformName}`}>
                           <TableRow className="bg-muted/40 hover:bg-muted/40">
-                            <TableCell colSpan={7} className="text-muted-foreground py-1.5 text-xs font-medium">
+                            <TableCell colSpan={8} className="text-muted-foreground py-1.5 text-xs font-medium">
                               {platformName}
                               <span className="ml-2">
                                 {format(
@@ -447,9 +503,9 @@ export function PortfolioPage() {
         </>
       )}
 
-      <EditQuantityDialog
-        row={editingRow}
-        onOpenChange={(open) => !open && setEditingRow(null)}
+      <TransactionsDialog
+        row={transactionsRow}
+        onOpenChange={(open) => !open && setTransactionsRow(null)}
       />
 
       <AlertDialog open={deletingRow !== null} onOpenChange={(open) => !open && setDeletingRow(null)}>
@@ -473,5 +529,118 @@ export function PortfolioPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+/**
+ * Unrealized P&L of one row, in the account currency as served by the
+ * backend. Fully sold positions show their realized gain instead (their
+ * unrealized P&L is 0 by definition).
+ */
+function PnlCell({
+  row,
+  currency,
+  onFillPrice,
+}: {
+  row: PortfolioTableRow
+  currency: CurrencyCode
+  onFillPrice: () => void
+}) {
+  if (row.isMissingPrice) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          // The row itself navigates to the asset page.
+          e.stopPropagation()
+          onFillPrice()
+        }}
+        className="text-warning text-xs whitespace-nowrap underline underline-offset-4"
+      >
+        Prix à renseigner
+      </button>
+    )
+  }
+  const perf = row.performance
+  if (!perf) return <span className="text-muted-foreground">—</span>
+  if (Number(row.quantity) === 0) {
+    return (
+      <div className="flex flex-col items-end">
+        <SignedMoney value={perf.realized_pnl} currency={currency} className="font-medium" />
+        <span className="text-muted-foreground text-xs">réalisée, soldée</span>
+      </div>
+    )
+  }
+  return (
+    <div className="flex flex-col items-end">
+      <SignedMoney value={perf.unrealized_pnl} currency={currency} className="font-medium" />
+      <GainLossValue value={perf.unrealized_pnl_percent} className="text-xs" />
+    </div>
+  )
+}
+
+function PerformanceTile({
+  totals,
+  positionsWithoutPrice,
+  isUnavailable,
+  isLoading,
+  onShowMissing,
+}: {
+  totals: PortfolioPerformanceTotals | null
+  positionsWithoutPrice: number
+  isUnavailable: boolean
+  isLoading: boolean
+  onShowMissing: () => void
+}) {
+  const { currency } = useCurrency()
+  const plural = positionsWithoutPrice > 1 ? "s" : ""
+
+  const missingNote = positionsWithoutPrice > 0 && (
+    <span className="text-xs">
+      {positionsWithoutPrice} position{plural} sans prix d'achat, exclue{plural} du calcul.{" "}
+      <button
+        type="button"
+        onClick={onShowMissing}
+        className="text-primary underline-offset-4 hover:underline"
+      >
+        Les compléter
+      </button>
+    </span>
+  )
+
+  return (
+    <StatTile
+      label="Plus-value latente"
+      icon={<TrendingUp className="size-4.5" />}
+      value={
+        isLoading ? (
+          <Skeleton className="h-8 w-32" />
+        ) : totals ? (
+          <SignedMoney value={totals.unrealized_pnl} currency={currency} />
+        ) : (
+          "—"
+        )
+      }
+      delta={totals && <GainLossValue value={totals.unrealized_pnl_percent} />}
+      secondaryValue={
+        isLoading ? null : isUnavailable ? (
+          <span className="text-xs">Indisponible pour le moment.</span>
+        ) : (
+          <div className="flex flex-col gap-1">
+            {totals ? (
+              <span className="text-xs">
+                Investi {formatMoney(totals.cost_basis, currency)} · Réalisée{" "}
+                <SignedMoney value={totals.realized_pnl} currency={currency} />
+              </span>
+            ) : positionsWithoutPrice === 0 ? null : (
+              <span className="text-xs">
+                Renseigne les prix d'achat pour suivre ta plus-value.
+              </span>
+            )}
+            {missingNote}
+          </div>
+        )
+      }
+    />
   )
 }

@@ -45,6 +45,7 @@ export const ALERT_TYPE_LABELS: Record<PriceAlertType, string> = {
   percent_change: "Variation de",
   portfolio_total_above: "Portefeuille au-dessus de",
   portfolio_total_below: "Portefeuille en-dessous de",
+  allocation_drift: "Écart de répartition",
 }
 
 export const ALERT_WINDOW_LABELS: Record<AlertWindow, string> = {

@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Plus } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +16,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -29,8 +31,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAllocationTargets } from "@/features/allocation/hooks"
 import { useAssets } from "@/features/assets/hooks"
 import { getAlertErrorMessage, useCreateAlert } from "@/features/alerts/hooks"
+import { toApiError } from "@/lib/http-client"
 import { ParseAlertForm } from "@/features/alerts/ParseAlertForm"
 import {
   createAlertSchema,
@@ -40,6 +44,7 @@ import {
 import { ALERT_TYPE_LABELS, ALERT_WINDOW_LABELS, ASSET_TYPE_LABELS } from "@/lib/format"
 import { useCurrency } from "@/providers/CurrencyProvider"
 import type { CreateAlertPayload } from "@/features/alerts/api"
+import type { PriceAlertType } from "@/types/api"
 
 const NEEDS_ASSET = new Set(["price_above", "price_below", "percent_change"])
 
@@ -52,6 +57,16 @@ export function CreateAlertDialog() {
   const { data: assets = [] } = useAssets()
   const createAlert = useCreateAlert()
   const { currency } = useCurrency()
+  const targetsQuery = useAllocationTargets()
+  const hasTargets = Object.keys(targetsQuery.data ?? {}).length > 0
+
+  // allocation_drift is refused (422) without allocation targets, so it is
+  // only offered once targets exist - better than a choice that can't work.
+  const typeLabels = Object.fromEntries(
+    Object.entries(ALERT_TYPE_LABELS).filter(
+      ([value]) => value !== "allocation_drift" || hasTargets,
+    ),
+  ) as Partial<Record<PriceAlertType, string>>
 
   const form = useForm<CreateAlertFormInput, unknown, CreateAlertFormValues>({
     resolver: zodResolver(createAlertSchema),
@@ -63,7 +78,10 @@ export function CreateAlertDialog() {
   async function onSubmit(values: CreateAlertFormValues) {
     const payload: CreateAlertPayload = { type: values.type }
     if (NEEDS_ASSET.has(values.type)) payload.asset_id = values.asset_id
-    if (values.type === "percent_change") {
+    if (values.type === "allocation_drift") {
+      // Only percent_threshold: asset_id, threshold and window are refused.
+      payload.percent_threshold = values.percent_threshold
+    } else if (values.type === "percent_change") {
       payload.percent_threshold = values.percent_threshold
       payload.window = values.window
     } else {
@@ -76,7 +94,15 @@ export function CreateAlertDialog() {
       form.reset({ type: "price_above" })
       setOpen(false)
     } catch (error) {
-      form.setError("root", { message: getAlertErrorMessage(error) })
+      // errors.type on allocation_drift = no targets (e.g. cleared in another
+      // tab since the dialog opened). The backend text names a raw endpoint.
+      const noTargets = values.type === "allocation_drift" && toApiError(error).errors?.type
+      form.setError("root", {
+        message: noTargets
+          ? "Tu n'as plus d'objectifs de répartition : définis-les d'abord sur la page Répartition."
+          : getAlertErrorMessage(error),
+      })
+      if (noTargets) void targetsQuery.refetch()
     }
   }
 
@@ -129,13 +155,13 @@ export function CreateAlertDialog() {
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
-                          items={ALERT_TYPE_LABELS}
+                          items={typeLabels}
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {Object.entries(ALERT_TYPE_LABELS).map(([value, label]) => (
+                            {Object.entries(typeLabels).map(([value, label]) => (
                               <SelectItem key={value} value={value}>
                                 {label}
                               </SelectItem>
@@ -143,6 +169,18 @@ export function CreateAlertDialog() {
                           </SelectContent>
                         </Select>
                       </FormControl>
+                      {targetsQuery.isSuccess && !hasTargets && (
+                        <FormDescription>
+                          Pour être prévenu d'un écart de répartition,{" "}
+                          <Link
+                            to="/allocation"
+                            className="text-foreground underline underline-offset-4"
+                          >
+                            définis d'abord tes objectifs
+                          </Link>
+                          .
+                        </FormDescription>
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -182,7 +220,34 @@ export function CreateAlertDialog() {
                   />
                 )}
 
-                {type === "percent_change" ? (
+                {type === "allocation_drift" ? (
+                  <FormField
+                    control={form.control}
+                    name="percent_threshold"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Écart maximal (points)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            step="any"
+                            min="1"
+                            max="100"
+                            placeholder="5"
+                            {...field}
+                            value={(field.value as string | number | undefined) ?? ""}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Tu seras prévenu quand un type d'actif s'écarte de son objectif d'au
+                          moins ce nombre de points (ex. 5 : objectif 30 %, part réelle 35 %).
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                ) : type === "percent_change" ? (
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       control={form.control}

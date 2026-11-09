@@ -6,7 +6,11 @@ const ALERT_TYPES = [
   "percent_change",
   "portfolio_total_above",
   "portfolio_total_below",
+  "allocation_drift",
 ] as const
+
+// allocation_drift: gap between a type's share and its target, in points.
+export const MAX_DRIFT_POINTS = 100
 
 const ASSET_TYPES = new Set(["price_above", "price_below", "percent_change"])
 
@@ -21,7 +25,11 @@ export const createAlertSchema = z
     type: z.enum(ALERT_TYPES, { error: "Choisis un type d'alerte" }),
     asset_id: z.number().int().positive().optional(),
     threshold: z.coerce.number().optional(),
-    percent_threshold: z.coerce.number().optional(),
+    // Empty field -> undefined (not 0), so the message says "required".
+    percent_threshold: z.preprocess(
+      (v) => (v === "" || v === null ? undefined : v),
+      z.coerce.number().optional(),
+    ),
     window: z.enum(["1h", "24h", "7d"]).optional(),
   })
   .superRefine((data, ctx) => {
@@ -57,7 +65,18 @@ export const createAlertSchema = z
         ctx.addIssue({ code: "custom", path: ["window"], message: "Choisis une fenêtre" })
       }
     }
+    if (data.type === "allocation_drift") {
+      const issue = driftIssue(data.percent_threshold)
+      if (issue) ctx.addIssue({ code: "custom", path: ["percent_threshold"], message: issue })
+    }
   })
+
+export function driftIssue(value: number | undefined): string | null {
+  if (value === undefined || !Number.isFinite(value)) return "Écart requis, en points"
+  if (value < 1) return "1 point minimum"
+  if (value > MAX_DRIFT_POINTS) return "100 points maximum"
+  return null
+}
 
 export type CreateAlertFormInput = z.input<typeof createAlertSchema>
 export type CreateAlertFormValues = z.output<typeof createAlertSchema>

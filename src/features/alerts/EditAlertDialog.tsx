@@ -13,6 +13,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -30,6 +31,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { getAlertErrorMessage, useUpdateAlert } from "@/features/alerts/hooks"
 import {
+  driftIssue,
   editAlertSchema,
   type EditAlertFormInput,
   type EditAlertFormValues,
@@ -37,6 +39,7 @@ import {
 import { ALERT_WINDOW_LABELS } from "@/lib/format"
 import { toApiError } from "@/lib/http-client"
 import { useCurrency } from "@/providers/CurrencyProvider"
+import type { UpdateAlertPayload } from "@/features/alerts/api"
 import type { PriceAlert } from "@/types/api"
 
 export function EditAlertDialog({
@@ -72,8 +75,19 @@ export function EditAlertDialog({
 
   async function onSubmit(values: EditAlertFormValues) {
     if (!alert) return
+    let payload: UpdateAlertPayload = values
+    if (alert.type === "allocation_drift") {
+      // Only percent_threshold (1-100 points) is editable; threshold and
+      // window are refused (422) on this type, so never send them.
+      const issue = driftIssue(values.percent_threshold)
+      if (issue) {
+        form.setError("percent_threshold", { message: issue })
+        return
+      }
+      payload = { percent_threshold: values.percent_threshold }
+    }
     try {
-      await updateAlert.mutateAsync({ id: alert.id, payload: values })
+      await updateAlert.mutateAsync({ id: alert.id, payload })
       toast.success("Alerte mise à jour")
       onOpenChange(false)
     } catch (error) {
@@ -91,6 +105,7 @@ export function EditAlertDialog({
   }
 
   const isPercent = alert?.type === "percent_change"
+  const isDrift = alert?.type === "allocation_drift"
 
   return (
     <Dialog open={alert !== null} onOpenChange={onOpenChange}>
@@ -112,7 +127,33 @@ export function EditAlertDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            {isPercent ? (
+            {isDrift ? (
+              <FormField
+                control={form.control}
+                name="percent_threshold"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Écart maximal (points)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        step="any"
+                        min="1"
+                        max="100"
+                        {...field}
+                        value={(field.value as string | number | undefined) ?? ""}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Écart entre la part d'un type d'actif et son objectif. Pour surveiller
+                      autre chose, supprime l'alerte et crées-en une nouvelle.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : isPercent ? (
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}

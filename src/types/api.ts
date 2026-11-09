@@ -82,13 +82,39 @@ export interface Platform {
   logo_url: string | null
 }
 
+/**
+ * Gain/loss of one position, computed by the backend separately in each
+ * currency with every transaction converted at the FX rate of its own day.
+ * Always read the user.currency key - never convert the USD figures with
+ * /api/exchange-rates, that would drop the FX effect and be wrong.
+ * Weighted average cost method; cost_basis includes fees.
+ */
+export interface PositionPerformance {
+  cost_basis: number
+  // null once everything has been sold.
+  average_buy_price: number | null
+  unrealized_pnl: number
+  // null when cost_basis is 0 (fully sold, or only airdrops).
+  unrealized_pnl_percent: number | null
+  realized_pnl: number
+}
+
+export type PortfolioPerformanceTotals = Omit<PositionPerformance, "average_buy_price">
+
+export type ByCurrency<T> = Record<CurrencyCode, T>
+
 export interface PortfolioValuedEntry {
+  // Same id as /api/portfolio-entries (added 08/11/2026).
+  id: number
   asset: string
   asset_type: AssetType
   platform: string
   quantity: string
   value_usd: number
   value_eur: number
+  // null while one of the position's transactions has no price (migrated
+  // positions): show "prix d'achat à renseigner".
+  performance: ByCurrency<PositionPerformance> | null
 }
 
 export interface PortfolioResponse {
@@ -104,6 +130,12 @@ export interface PortfolioResponse {
   // per-row equivalent) - a currency is null only if its FX rate couldn't
   // be fetched.
   total_value_by_currency: Record<"USD" | "EUR" | "GBP" | "CHF", number | null>
+  // Sums the positions that have a performance only. Observed 08/11/2026:
+  // the backend sends [] (empty PHP array) instead of an object when no
+  // position has a price - see pickCurrency() in features/portfolio/performance.ts.
+  performance: ByCurrency<PortfolioPerformanceTotals> | []
+  // How many positions are excluded from `performance` (no purchase price).
+  positions_without_price: number
 }
 
 export interface PortfolioEntry {
@@ -116,12 +148,83 @@ export interface PortfolioEntry {
   platform: Platform
 }
 
+/** Targets per asset type, in %. Missing type = 0 %. {} = no targets. */
+export type AllocationTargets = Partial<Record<AssetType, number>>
+
+export interface AllocationByType {
+  type: AssetType
+  value_usd: number
+  percent: number | null // null when the portfolio is empty
+  // The four below are null when has_targets is false.
+  target_percent: number | null
+  drift: number | null // percent - target_percent, in points (+ = overweight)
+  rebalance_usd: number | null // + buy / - sell, at constant total (sums to 0)
+  contribution_usd: number | null // only meaningful with ?contribution=
+}
+
+export interface AllocationResponse {
+  total_value_usd: number
+  has_targets: boolean
+  max_drift: number | null
+  by_type: AllocationByType[]
+  by_platform: Array<{ platform: string; value_usd: number; percent: number | null }>
+  by_asset: Array<{ asset: string; asset_type: AssetType; value_usd: number; percent: number | null }>
+}
+
+export type HistoryRange = "7d" | "30d" | "90d" | "1y"
+
+export interface PortfolioHistoryPoint {
+  date: string // YYYY-MM-DD (UTC), oldest first, last one = today
+  value: ByCurrency<number>
+  // Cost basis of what's held that day. null from the first day a position
+  // without purchase price is held. Observed 08/11/2026: before anything is
+  // held it's {0,...} (not null), alongside value 0.
+  invested: ByCurrency<number> | null
+}
+
+export interface PortfolioHistoryResponse {
+  range: HistoryRange
+  from: string
+  to: string
+  points: PortfolioHistoryPoint[]
+  // Names of held assets with no price history (excluded, not counted as 0).
+  missing_history: string[]
+}
+
+export type TransactionType = "buy" | "sell"
+
+/**
+ * One buy or sell on a position (GET /api/portfolio-entries/{id}/transactions).
+ * Decimals arrive as strings. unit_price/fee are in the transaction's own
+ * currency, as typed - never converted. unit_price is null only on the
+ * opening buy of positions migrated on 08/11/2026 (to be filled by the user).
+ * position_quantity is the position's *current* total after the write
+ * (same on every item), not a running balance.
+ */
+export interface PortfolioTransaction {
+  id: number
+  portfolio_entry_id: number
+  type: TransactionType
+  quantity: string
+  unit_price: string | null
+  fee: string
+  currency: CurrencyCode
+  executed_at: string
+  position_quantity: string
+  created_at: string
+  updated_at: string
+}
+
 export type PriceAlertType =
   | "price_above"
   | "price_below"
   | "percent_change"
   | "portfolio_total_above"
   | "portfolio_total_below"
+  // Fires when an asset type drifts from its allocation target by at least
+  // percent_threshold points. No asset_id/threshold/window. Requires targets
+  // (422 errors.type otherwise); clearing targets later does NOT delete it.
+  | "allocation_drift"
 
 export type AlertWindow = "1h" | "24h" | "7d"
 

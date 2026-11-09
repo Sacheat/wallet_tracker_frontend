@@ -17,6 +17,7 @@ import { LegalNoticePage } from "@/features/legal/LegalNoticePage"
 import { PrivacyPolicyPage } from "@/features/legal/PrivacyPolicyPage"
 import { CatalogPage } from "@/features/catalog/CatalogPage"
 import { MarketPage } from "@/features/market/MarketPage"
+import { AllocationPage } from "@/features/allocation/AllocationPage"
 import { PortfolioPage } from "@/features/portfolio/PortfolioPage"
 import { queryClient } from "@/lib/query-client"
 import { authQueryKey, AuthProvider } from "@/providers/AuthProvider"
@@ -74,6 +75,7 @@ function AppRoutes() {
           <Route index element={<PortfolioPage />} />
           <Route path="/assets/:id" element={<AssetDetailPage />} />
           <Route path="/market" element={<MarketPage />} />
+          <Route path="/allocation" element={<AllocationPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
           <Route path="/audit" element={<AuditPage />} />
           <Route path="/catalog" element={<CatalogPage />} />
