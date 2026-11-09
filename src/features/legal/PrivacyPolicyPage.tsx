@@ -101,17 +101,14 @@ export function PrivacyPolicyPage() {
         </p>
         <ul className="flex list-disc flex-col gap-2 pl-5">
           <li>
-            <span className="font-medium">alwaysdata</span> (France) : hébergement du
-            serveur et de la base de données.
+            <span className="font-medium">[Hébergeur]</span> ([pays]) : hébergement
+            de l'interface, du serveur et de la base de données, sur un serveur
+            virtuel mis à disposition par [nom de l'école].
           </li>
           <li>
-            <span className="font-medium">Vercel</span> (États-Unis) : hébergement de
-            l'interface et relais des requêtes vers le serveur.
-          </li>
-          <li>
-            <span className="font-medium">Resend</span> (Plus Five Five, Inc.,
-            États-Unis) : envoi des emails (vérification, mot de passe oublié, alertes,
-            résumés). Il reçoit votre adresse email et le contenu de ces emails.
+            <span className="font-medium">Brevo</span> (Sendinblue SAS, France) :
+            envoi des emails (vérification, mot de passe oublié, alertes, résumés).
+            Il reçoit votre adresse email et le contenu de ces emails.
           </li>
           <li>
             <span className="font-medium">Google, service Gemini</span> (États-Unis) :
