@@ -299,26 +299,81 @@ export function PortfolioPage() {
         <TableCell className="text-right">
           <PnlCell row={row} currency={currency} onFillPrice={() => setTransactionsRow(row)} />
         </TableCell>
-        <TableCell onClick={(e) => e.stopPropagation()}>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button variant="ghost" size="icon-sm" aria-label="Actions">
-                  <MoreHorizontal />
-                </Button>
-              }
-            />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTransactionsRow(row)}>
-                Achats et ventes
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onClick={() => setDeletingRow(row)}>
-                Supprimer
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </TableCell>
+        <TableCell onClick={(e) => e.stopPropagation()}>{renderRowActions(row)}</TableCell>
       </TableRow>
+    )
+  }
+
+  function renderRowActions(row: PortfolioTableRow) {
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="icon-sm" aria-label="Actions">
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setTransactionsRow(row)}>
+            Achats et ventes
+          </DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onClick={() => setDeletingRow(row)}>
+            Supprimer
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
+
+  // Mobile counterpart of renderRow: the table needs ~900px, so below md
+  // each position is a card with the essentials (value, P&L, 24h).
+  function renderCard(row: PortfolioTableRow) {
+    return (
+      <li key={row.entryId} className="relative flex items-center gap-3 px-3 py-3">
+        <EntityAvatar
+          src={row.assetLogoUrl}
+          label={row.assetSymbol}
+          toneClassName={cn(
+            `${ASSET_TYPE_CHART_CLASS[row.assetType]}/15`,
+            ASSET_TYPE_CHART_TEXT_CLASS[row.assetType],
+          )}
+          className="size-9 shrink-0 text-xs"
+        />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <Link
+            to={`/assets/${row.assetId}`}
+            className="flex min-w-0 items-center gap-1.5 text-sm font-medium after:absolute after:inset-0"
+          >
+            <span className="truncate">{row.assetName}</span>
+            {row.hasActiveAlert && (
+              <Bell className="text-primary size-3.5 shrink-0" aria-label="Alerte active" />
+            )}
+          </Link>
+          <span className="text-muted-foreground truncate text-xs tabular-nums">
+            {formatQuantity(row.quantity)} {row.assetSymbol}
+            {!groupByPlatform && ` · ${row.platformName}`}
+          </span>
+          <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+            24h <GainLossValue value={row.change24h} />
+          </span>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-0.5 text-sm tabular-nums">
+          {row.isGoldUnavailable ? (
+            <span className="text-muted-foreground inline-flex items-center gap-1 text-xs">
+              <TriangleAlert className="size-3.5" /> Indisponible
+            </span>
+          ) : (
+            <span className="font-medium">
+              {row.valueUsd !== null ? format(row.valueUsd) : "—"}
+            </span>
+          )}
+          <div className="relative z-10">
+            <PnlCell row={row} currency={currency} onFillPrice={() => setTransactionsRow(row)} />
+          </div>
+        </div>
+        <div className="relative z-10 -mr-1.5">{renderRowActions(row)}</div>
+      </li>
     )
   }
 
@@ -394,7 +449,7 @@ export function PortfolioPage() {
       ) : (
         <>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1 sm:max-w-xs">
+            <div className="relative w-full sm:w-auto sm:max-w-xs sm:flex-1">
               <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
               <Input
                 placeholder="Filtrer par actif ou plateforme..."
@@ -427,7 +482,27 @@ export function PortfolioPage() {
                 : `Aucune position ne correspond à "${search}".`}
             </p>
           ) : (
-            <div className="overflow-hidden rounded-lg border">
+            <>
+            <div className="bg-card overflow-hidden rounded-lg border md:hidden">
+              {groups ? (
+                groups.map(([platformName, platformRows]) => (
+                  <section key={`group-${platformName}`}>
+                    <h2 className="bg-muted/40 text-muted-foreground flex justify-between border-b px-3 py-1.5 text-xs font-medium">
+                      {platformName}
+                      <span className="tabular-nums">
+                        {format(platformRows.reduce((s, r) => s + (r.valueUsd ?? 0), 0))}
+                      </span>
+                    </h2>
+                    <ul className="divide-y border-b last:border-b-0">
+                      {platformRows.map(renderCard)}
+                    </ul>
+                  </section>
+                ))
+              ) : (
+                <ul className="divide-y">{filteredRows.map(renderCard)}</ul>
+              )}
+            </div>
+            <div className="hidden overflow-hidden rounded-lg border md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -499,6 +574,7 @@ export function PortfolioPage() {
                 </TableBody>
               </Table>
             </div>
+            </>
           )}
         </>
       )}

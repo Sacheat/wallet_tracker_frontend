@@ -9,6 +9,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={resolvedTheme}
       className="toaster group"
+      // Clears the mobile bottom tab bar (0 on desktop, see index.css).
+      offset={{ bottom: "calc(24px + var(--bottom-nav-height))" }}
+      mobileOffset={{ bottom: "calc(16px + var(--bottom-nav-height))" }}
       icons={{
         success: (
           <CircleCheckIcon className="size-4" />

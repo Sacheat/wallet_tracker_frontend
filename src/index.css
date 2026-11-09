@@ -140,6 +140,18 @@
     --sidebar-ring: #8C7EFF;
 }
 
+/* Height of the mobile bottom tab bar (AppShell), 0 once it's hidden at md.
+   Used to pad the page and to lift toasts above it. */
+:root {
+    --bottom-nav-height: 0px;
+}
+
+@media (width < 48rem) {
+    :root {
+        --bottom-nav-height: calc(4rem + env(safe-area-inset-bottom));
+    }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
