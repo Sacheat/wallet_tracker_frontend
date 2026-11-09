@@ -9,6 +9,54 @@ export interface ChangelogEntry {
 // something worth telling users about ships; not every commit belongs here.
 export const CHANGELOG_ENTRIES: ChangelogEntry[] = [
   {
+    date: "2026-11-09",
+    title: "Une app pensée pour le mobile",
+    description:
+      "Sur téléphone, la navigation passe dans une barre d'onglets en bas de l'écran et le haut de page ne prend plus qu'une ligne. Tes positions s'affichent en cartes lisibles plutôt qu'en tableau à faire défiler.",
+  },
+  {
+    date: "2026-11-09",
+    title: "Journal d'achats et de ventes",
+    description:
+      "Chaque position garde maintenant l'historique de tes achats et ventes, avec prix, frais et date. Ta quantité se met à jour toute seule, et tu peux corriger ou supprimer une opération depuis « Achats et ventes ».",
+  },
+  {
+    date: "2026-11-09",
+    title: "Plus-values latentes et réalisées",
+    description:
+      "Vois combien tu as gagné ou perdu, position par position et au total, avec ton prix moyen d'achat. Les plus-values tiennent compte du taux de change du jour de chaque opération.",
+  },
+  {
+    date: "2026-11-09",
+    title: "Évolution de ton portefeuille",
+    description:
+      "Une courbe montre la valeur de ton portefeuille sur 7 jours, 30 jours, 90 jours ou 1 an, à côté du montant que tu as investi.",
+  },
+  {
+    date: "2026-11-09",
+    title: "Objectifs de répartition",
+    description:
+      "Fixe la part que tu veux pour chaque type d'actif. La page Répartition t'indique les écarts, ce qu'il faudrait acheter ou vendre pour rééquilibrer, et comment répartir une nouvelle somme à investir.",
+  },
+  {
+    date: "2026-11-09",
+    title: "Alerte d'écart de répartition",
+    description:
+      "Sois prévenu quand un type d'actif s'éloigne trop de ton objectif, du nombre de points que tu choisis.",
+  },
+  {
+    date: "2026-09-28",
+    title: "Récupère tes données",
+    description:
+      "Télécharge tout ce qui est lié à ton compte dans un fichier, depuis la page Compte. Les mentions légales et la politique de confidentialité sont accessibles en bas de chaque page.",
+  },
+  {
+    date: "2026-09-27",
+    title: "Logos du catalogue",
+    description:
+      "Ajoute un logo à un actif ou une plateforme en envoyant directement une image, plutôt qu'en collant une adresse web.",
+  },
+  {
     date: "2026-09-22",
     title: "Nouveau look",
     description:

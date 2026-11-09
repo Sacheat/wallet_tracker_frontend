@@ -33,7 +33,8 @@ Toute écriture invalide `["portfolio-entries"]` et `["portfolio"]`. Valorisatio
 ## Écran Portefeuille
 
 - **Tuiles** : valeur totale (avec variation 1 h / 24 h / 7 j calculée par le backend) et plus-value latente / réalisée dans la devise du compte.
-- **Tableau** : tri sur chaque colonne, recherche (actif, symbole, plateforme), regroupement par plateforme, export CSV (`portefeuille.csv`, protégé contre l'injection de formules).
+- **Tableau** : tri sur chaque colonne, recherche (actif, symbole, plateforme), regroupement par plateforme avec sous-total par plateforme, export CSV (`portefeuille.csv`, protégé contre l'injection de formules). L'export reprend les lignes **filtrées**, avec les plus-values dans la devise du compte.
+- **Sur mobile (< 768 px)**, le tableau est remplacé par une liste de cartes (`renderCard`) : logo, nom, quantité et symbole, plateforme, variation 24 h, valeur, plus-value et menu d'actions. Toute la carte mène à la page de l'actif ; le bouton « Prix à renseigner » et le menu restent cliquables séparément. Le regroupement par plateforme fonctionne aussi. Le tri par colonne n'existe pas dans cette vue : la liste suit le tri en cours (par défaut, valeur décroissante).
 - **Indicateurs par ligne** : cloche si une alerte est active sur l'actif, avertissement si le cours de l'or est indisponible, mention « Prix d'achat à renseigner » si une transaction n'a pas de prix.
 - **Filtre « Prix d'achat à renseigner »** : proposé quand `positions_without_price > 0`. Il isole les positions exclues du calcul des plus-values.
 - Un clic sur une ligne ouvre le [détail de l'actif](market-and-assets.md). Le menu « Actions » donne accès au journal et à la suppression.

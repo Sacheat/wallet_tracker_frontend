@@ -6,13 +6,13 @@ import { defineConfig, type Plugin } from 'vite'
 
 /**
  * Production Content-Security-Policy, injected as a <meta> tag at build
- * time. The API is same-origin behind the /backend rewrite (vercel.json),
+ * time. The API is same-origin behind the /backend proxy (NGINX in prod),
  * so 'self' covers it - no backend origin to hard-code. The inline theme
  * script in index.html is allowed by its sha256, computed here from the
  * final HTML, so editing that script can never silently break the page.
  *
  * frame-ancestors can't be set from a <meta> tag: it's sent as an HTTP
- * header by vercel.json, alongside the other security headers.
+ * header by NGINX, alongside the other security headers (docs/deployment.md).
  */
 function contentSecurityPolicy(): Plugin {
   return {
@@ -57,7 +57,7 @@ export default defineConfig(({ command }) => {
       tailwindcss(),
       ...(command === 'build' ? [contentSecurityPolicy()] : []),
     ],
-    // Mirrors the /backend rewrite in vercel.json so the front code is the
+    // Mirrors the /backend proxy NGINX does in prod so the front code is the
     // same in dev and prod.
     server: {
       proxy: {

@@ -35,15 +35,13 @@ import { LogoPicker } from "@/components/LogoPicker"
 import { useAssetSearch, useCreateAsset, useUpdateAsset } from "@/features/assets/hooks"
 import { assetFormSchema, type AssetFormValues } from "@/features/assets/schemas"
 import {
-  ASSET_TYPE_CHART_CLASS,
-  ASSET_TYPE_CHART_TEXT_CLASS,
+  ASSET_TYPE_AVATAR_TONE,
   ASSET_TYPE_LABELS,
 } from "@/lib/format"
 import { getCatalogErrorMessage } from "@/lib/catalog-errors"
 import { KEEP_LOGO, resolveLogoPreview } from "@/lib/logo-upload"
 import { useLogoDraft } from "@/lib/use-logo-draft"
 import { useDebouncedValue } from "@/lib/use-debounced-value"
-import { cn } from "@/lib/utils"
 import type { Asset, AssetSearchResult } from "@/types/api"
 
 const EMPTY_VALUES: AssetFormValues = {
@@ -185,10 +183,7 @@ export function AssetFormDialog({
             <EntityAvatar
               src={previewLogoUrl}
               label={previewSymbol || previewName || "?"}
-              toneClassName={cn(
-                `${ASSET_TYPE_CHART_CLASS[previewType]}/15`,
-                ASSET_TYPE_CHART_TEXT_CLASS[previewType],
-              )}
+              toneClassName={ASSET_TYPE_AVATAR_TONE[previewType]}
             />
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate text-sm font-medium">
@@ -255,10 +250,7 @@ export function AssetFormDialog({
                           <EntityAvatar
                             src={null}
                             label={result.symbol}
-                            toneClassName={cn(
-                              `${ASSET_TYPE_CHART_CLASS[result.type]}/15`,
-                              ASSET_TYPE_CHART_TEXT_CLASS[result.type],
-                            )}
+                            toneClassName={ASSET_TYPE_AVATAR_TONE[result.type]}
                             className="size-7 text-[0.65rem]"
                           />
                           <span className="flex min-w-0 flex-1 items-center gap-2">

@@ -14,7 +14,7 @@ const code = "bg-muted rounded px-1 py-0.5 font-mono text-xs"
 
 export function PrivacyPolicyPage() {
   return (
-    <LegalLayout title="Politique de confidentialité" updatedAt="28 septembre 2026">
+    <LegalLayout title="Politique de confidentialité" updatedAt="9 novembre 2026">
       <LegalSection title="Qui est responsable de vos données ?">
         <p>
           Sacheat, éditeur de ce site (voir les{" "}

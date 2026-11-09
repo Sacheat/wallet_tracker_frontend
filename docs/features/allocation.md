@@ -16,7 +16,15 @@ Les montants de la réponse sont en USD et convertis avec le taux du jour (`useC
 
 - **Sans objectifs** : barres horizontales sur une échelle commune de 0 à 100 %, par type, par plateforme et par actif. L'ordre des types est fixe et ne change pas avec les valeurs, pour que chaque couleur garde son sens.
 - **Avec objectifs** : pour chaque type, la part actuelle face à l'objectif, l'écart en points (`drift`, positif = surpondéré) et le montant à acheter ou vendre pour rééquilibrer à total constant (`rebalance_usd`, dont la somme vaut 0). Un type est signalé au-delà d'un seuil d'écart fixe. Ce seuil sert uniquement à l'affichage : l'alerte `allocation_drift` a son propre seuil, choisi par l'utilisateur.
+- **Seuil d'avertissement** : un type est signalé au-delà de 5 points d'écart (`DRIFT_WARNING` dans `AllocationPage.tsx`), et l'écart maximal (`max_drift`) est rappelé en haut de la carte.
 - **Simulation d'apport** : un montant saisi relance la requête avec `?contribution=` (avec `keepPreviousData`) et affiche, pour chaque type, comment répartir cet apport (`contribution_usd`). Le champ n'est proposé qu'avec des objectifs, puisque le backend répondrait 422 sans eux. Il se vide si les objectifs sont effacés.
+
+### Simulation d'apport, en détail
+
+- La saisie est **débouncée de 500 ms** (`useDebouncedValue`) : la requête ne part qu'une fois la frappe terminée.
+- La virgule est acceptée comme séparateur décimal. Seul un nombre strictement positif est envoyé ; une saisie invalide affiche un message sous le champ sans lancer de requête.
+- Chaque montant a sa propre entrée de cache (`["portfolio","allocation",montant]`, `0` sans apport) : revenir à un montant déjà simulé est instantané.
+- Le texte d'aide récapitule le total réparti, converti dans la devise du compte.
 
 ## Dialogue des objectifs — `TargetsDialog`
 

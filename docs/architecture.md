@@ -12,7 +12,7 @@ fonction d'API                      ← features/<f>/api.ts     (une fonction pa
 httpClient (axios)                  ← lib/http-client.ts      (CSRF, 419, 401)
    │  /backend/...
    ▼
-proxy Vite (dev) / rewrite Vercel (prod)  →  API Laravel
+proxy Vite (dev) / NGINX (prod)  →  API Laravel
 ```
 
 Ordre des providers (`src/App.tsx`) :
@@ -25,13 +25,12 @@ ThemeProvider
             └── OnboardingProvider ← tutoriel guidé
                 ├── OfflineBanner
                 ├── AppRoutes (dans un ErrorBoundary par route)
-                ├── Toaster
-                └── Analytics / SpeedInsights (Vercel)
+                └── Toaster
 ```
 
 ## Couche HTTP — `lib/http-client.ts`
 
-- **Base URL `/backend`, toujours la même origine.** En prod, Vercel réécrit `/backend/*` vers l'API ; en dev, Vite le proxifie vers `localhost:8000`. Le cookie de session Sanctum reste donc first-party : le domaine Vercel et celui de l'API sont des suffixes publics distincts, et un appel direct serait cross-site.
+- **Base URL `/backend`, toujours la même origine.** En prod, NGINX transmet `/backend/*` à Laravel sur le même domaine ; en dev, Vite le proxifie vers `localhost:8000`. Le cookie de session Sanctum reste donc first-party, et le code du front est identique dans les deux cas. Voir [Déploiement](deployment.md).
 - **CSRF automatique.** Avant toute requête qui n'est pas un GET, un intercepteur appelle `GET /sanctum/csrf-cookie`. L'appel est mémoïsé : plusieurs mutations simultanées ne le déclenchent qu'une fois. axios renvoie ensuite le cookie `XSRF-TOKEN` dans l'en-tête `X-XSRF-TOKEN` (`withXSRFToken: true`).
 - **419 (jeton CSRF expiré)** : le cookie est rafraîchi et la requête rejouée une fois, sans que l'utilisateur le voie.
 - **401** : diffuse un événement `onUnauthenticated`. `AuthProvider` y est abonné et termine la session locale. `GET /user` fait exception : c'est la sonde de session, et son 401 veut simplement dire « déconnecté ».
@@ -105,7 +104,7 @@ L'app manipule deux sortes de montants, qui ne se convertissent pas de la même 
 | Filtrage des URL venant de l'API : `safeLinkUrl` n'accepte que http(s), `safeImageUrl` que la même origine, `blob:` ou https | `lib/safe-url.ts` |
 | Échappement des cellules CSV commençant par `= + - @` (injection de formules) | `lib/csv.ts` |
 | CSP générée au build, avec le hash du script inline de thème | `vite.config.ts` |
-| En-têtes HSTS, `frame-ancestors 'none'`, nosniff, Permissions-Policy, COOP | `vercel.json` |
+| En-têtes HSTS, `frame-ancestors 'none'`, nosniff, Permissions-Policy, COOP | NGINX, voir [Déploiement](deployment.md#en-têtes-de-sécurité) |
 | Validation client des uploads (type, poids, dimensions), qui double celle du backend | `lib/logo-upload.ts`, `AvatarCropDialog.tsx` |
 | `is_admin` ne sert qu'à afficher ou masquer des contrôles. Le backend reste seul juge (403). | `features/audit`, `features/catalog` |
 | URL du webhook Discord masquée par défaut (c'est un secret) | `NotificationSettingsCard.tsx` |
