@@ -32,7 +32,7 @@ On y accède par le pied de page (`Footer`), présent dans l'app, sur les pages 
 
 Ces pages décrivent l'infrastructure et les sous-traitants réels. Elles doivent changer en même temps que :
 
-- **l'hébergement** (cas de la migration de Vercel et alwaysdata vers le VPS de l'école) ;
+- **l'hébergement** ;
 - **un prestataire qui reçoit des données personnelles** : envoi d'emails, IA, notifications ;
 - **un nouveau cookie** ou une nouvelle durée de session ;
 - **une nouvelle donnée collectée** ou une nouvelle durée de conservation.

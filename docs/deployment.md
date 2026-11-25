@@ -59,7 +59,7 @@ L'amont (`127.0.0.1:8000` ici) dépend de la façon dont Laravel tourne sur le V
 
 ### En-têtes de sécurité
 
-Ils étaient envoyés par `vercel.json` avant la migration. NGINX doit maintenant les ajouter sur toutes les réponses du front :
+NGINX doit les ajouter sur toutes les réponses du front :
 
 | En-tête | Valeur |
 | --- | --- |
@@ -97,8 +97,6 @@ Le backend doit être configuré pour être servi derrière ce proxy, sur le dom
 | `SANCTUM_STATEFUL_DOMAINS` | Le domaine du front, sinon Sanctum traite les requêtes comme des appels d'API sans session. |
 | `SESSION_DOMAIN`, `SESSION_SECURE_COOKIE` | Le domaine du front, cookie `Secure` en HTTPS. |
 | Proxies de confiance | NGINX, pour que Laravel lise `X-Forwarded-Proto` et sache que la requête est en HTTPS. |
-
-Il n'y a plus de secret de proxy (`x-proxy-secret`) : il servait à vérifier que les appels passaient par Vercel, ce qui n'a plus lieu d'être quand NGINX et Laravel tournent sur la même machine.
 
 ## Avant une mise en production
 

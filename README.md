@@ -1,6 +1,6 @@
 # Crypto Portfolio Tracker — Frontend
 
-Interface web (SPA) d'un suivi de portefeuille multi-actifs : crypto, actions, ETF et or. Elle consomme une API Laravel (dépôt séparé) et permet de :
+Interface web (SPA) d'un suivi de portefeuille multi-actifs : crypto, actions, ETF et or. Elle consomme une API Laravel ([wallet_tracker_backend](https://github.com/Sacheat/wallet_tracker_backend)) et permet de :
 
 - tenir un **journal d'achats / ventes** par position et suivre les **plus-values** latentes et réalisées ([portefeuille](docs/features/portfolio.md)) ;
 - voir l'**évolution de la valeur** du portefeuille sur 7 j, 30 j, 90 j ou 1 an ([historique de valeur](docs/features/portfolio.md#évolution-du-portefeuille--portfoliohistorycard)) ;
@@ -109,3 +109,7 @@ Par feature :
 - [Historique (audit)](docs/features/audit.md)
 - [Tutoriel, nouveautés et thème](docs/features/onboarding-and-ui.md)
 - [Pages légales](docs/features/legal.md)
+
+## Licence
+
+[MIT](LICENSE)
